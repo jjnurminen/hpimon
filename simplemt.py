@@ -6,17 +6,10 @@ ok but buffer updates may take too long (few hundred ms for 0,5 s buffer?)
 
 
 Multithreaded version:
-see e.g. 
-https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
-https://nikolak.com/pyqt-threading-tutorial/
+see e.g. https://nikolak.com/pyqt-threading-tutorial/
 
 separate worker thread (data fetch)
 use of timer?
-
-
-GIL?
-data is read through socket - should release the lock
-
 
 
 
@@ -34,45 +27,21 @@ import mne
 from mne.realtime import FieldTripClient
 
 
-def ft_server_pid():
-    """ Tries to return the PID of the ftserver process. """
-    PROCNAME = "neuromag2ft"
-    for proc in psutil.process_iter():
-        try:
-            if proc.name() == PROCNAME:
-                return proc.pid
-        except psutil.AccessDenied:
-            pass
-    return None
-
-
-def start_ft_server():
-    pass
 
 
 class DataFetchThread(QtCore.QThread):
 
-    data_rdy = QtCore.pyqtSignal(object)    
-    
+    data_rdy = QtCore.pyqtSignal(object) 
+ 
     def __init__(self, rtclient):
         QtCore.QThread.__init__(self)
-        if not ft_server_pid():
-            start_ft_server()
-        self.rtclient = FieldTripClient(host='localhost', port=1972,
-                                        tmax=150, wait_max=10)
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_snr_display)
         self.timer.start(1000)
-
         
     def run(self):
-        n_samples = 64
-        picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
-                               stim=False, include=[])
-        data = self.rtclient.get_data_as_epoch(n_samples=n_samples,
-                                               picks=picks)
-        self.data_rdy.emit(data)
-        
+ 
+       
 
 class HPImon(QtGui.QMainWindow):
 
@@ -98,7 +67,6 @@ class HPImon(QtGui.QMainWindow):
         self.timer.stop()
         self.rtclient.ft_client.disconnect()
         event.accept()
-
 
 def main():
 
