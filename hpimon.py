@@ -49,29 +49,6 @@ def ft_server_pid():
 def start_ft_server():
     pass
 
-
-class DataFetchThread(QtCore.QThread):
-
-    data_rdy = QtCore.pyqtSignal(object)    
-    
-    def __init__(self, rtclient):
-        QtCore.QThread.__init__(self)
-        if not ft_server_pid():
-            start_ft_server()
-        self.rtclient = FieldTripClient(host='localhost', port=1972,
-                                        tmax=150, wait_max=10)
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_snr_display)
-        self.timer.start(1000)
-
-        
-    def run(self):
-        n_samples = 64
-        picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
-                               stim=False, include=[])
-        data = self.rtclient.get_data_as_epoch(n_samples=n_samples,
-                                               picks=picks)
-        self.data_rdy.emit(data)
         
 
 class HPImon(QtGui.QMainWindow):
@@ -81,17 +58,28 @@ class HPImon(QtGui.QMainWindow):
         # load user interface made with designer
         uic.loadUi('hpimon.ui', self)
 
-        datathread = DataFetchThread()
-        datathread.data_rdy.connect(self.on_buffer_read)
-
         self.btnQuit.clicked.connect(self.close)
 
+        self.rtclient = FieldTripClient(host='localhost', port=1972,
+                                        tmax=150, wait_max=10)
+        self.rtclient.__enter__()
+        self.info = self.rtclient.get_measurement_info()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_snr_display)
+        self.timer.start(1000)
 
-    def update_snr_display(self, data):
-        self.label_1.setText(str(hash(data)))
 
-    def on_buffer_read(self, data):
-        self.update_snr_display(data)
+    def update_snr_display(self):
+        self.server_read()
+        self.label_1.setText(str(hash(self.data)))
+
+
+    def server_read(self):
+        n_samples = 1024
+        picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
+                               stim=False, include=[])
+        self.data = self.rtclient.get_data_as_epoch(n_samples=n_samples,
+                                                    picks=picks)
 
     def closeEvent(self, event):
         """ Confirm and close application. """
