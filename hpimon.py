@@ -32,6 +32,7 @@ data is read through socket - should release the lock
 from __future__ import print_function
 import sys
 from PyQt4 import QtGui, QtCore, uic
+from PyQt4.QtCore import pyqtSignal
 import time
 import psutil
 import mne
@@ -66,6 +67,9 @@ def start_ft_server():
 
 class HPImon(QtGui.QMainWindow):
 
+    # new signals must be defined here
+    new_data = pyqtSignal()
+
     def __init__(self):
         super(self.__class__, self).__init__()
         # load user interface made with designer
@@ -89,9 +93,26 @@ class HPImon(QtGui.QMainWindow):
         self.rtclient.__enter__()
         self.info = self.rtclient.get_measurement_info()
         self.init_glm()
+
+        self.new_data.connect(self.update_snr_display)
+
+        self.last_sample = self.buffer_last_sample()
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_snr_display)
-        self.timer.start(500)
+        self.timer.timeout.connect(self.poll_buffer)
+        self.timer.start(100)
+
+    def buffer_last_sample(self):
+        """ Return number of last sample available from server. """
+        return self.rtclient.ft_client.getHeader().nSamples
+        
+    def poll_buffer(self):
+        """ Emit a new data signal if new data is available in the 
+        buffer. """
+        buflast = self.buffer_last_sample()
+        if buflast > self.last_sample:
+            self.new_data.emit()
+            self.last_sample = buflast
+        
 
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
@@ -141,7 +162,8 @@ class HPImon(QtGui.QMainWindow):
     def update_snr_display(self):
         self.server_read()
         #self.compute_snr()
-        self.label_1.setText('moi')
+        self.label_1.setText('buffer has new data, last sample: ' +
+                             str(self.last_sample))
         #self.label_1.setText(str(self.snr_avg_mag))
 
     def server_read(self):
@@ -149,6 +171,8 @@ class HPImon(QtGui.QMainWindow):
                                stim=False, include=[])
         self.data = self.rtclient.get_data_as_epoch(n_samples=self.buflen,
                                                     picks=picks)
+                                                    
+
 
     def closeEvent(self, event):
         """ Confirm and close application. """
