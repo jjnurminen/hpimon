@@ -22,6 +22,8 @@ data is read through socket - should release the lock
 -poll buffer every x ms (x = 100 ms?)
 -send signal if buffer updated
 
+-nb: FieldTripClient can register callbacks - no need for polling :O
+
 
 
 
