@@ -35,14 +35,20 @@ from mne.realtime import FieldTripClient
 import numpy as np
 import scipy
 from mne import pick_types
+import os.path as op
+import subprocess
+
+
+SERVER_PATH = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
+SERVER_OPTS = ['--file', '/home/jussi/Dropbox/jn_multimodal01_raw.fif']
+SERVER_BIN = op.split(SERVER_PATH)[1]
 
 
 def ft_server_pid():
-    """ Tries to return the PID of the ftserver process. """
-    PROCNAME = "neuromag2ft"
+    """ Tries to return the PID of the server process. """
     for proc in psutil.process_iter():
         try:
-            if proc.name() == PROCNAME:
+            if proc.name() == SERVER_BIN:
                 return proc.pid
         except psutil.AccessDenied:
             pass
@@ -50,7 +56,8 @@ def ft_server_pid():
 
 
 def start_ft_server():
-    pass
+    args = [SERVER_PATH] + SERVER_OPTS
+    subprocess.Popen(args)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -64,7 +71,10 @@ class HPImon(QtGui.QMainWindow):
         self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
 
         if not ft_server_pid():
-            raise Exception('Server not running')
+            print('Starting server')
+            start_ft_server()
+            if not ft_server_pid():
+                raise Exception('Cannot start server')
 
         uic.loadUi('hpimon.ui', self)
 
