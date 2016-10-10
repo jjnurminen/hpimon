@@ -47,9 +47,9 @@ import subprocess
 
 
 SERVER_PATH = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-SERVER_OPTS = ['--file', '/home/jussi/Dropbox/bad_203_am_raw_sss.fif']
+SERVER_OPTS = ['--file', '/home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif']
 SERVER_BIN = op.split(SERVER_PATH)[1]
-BUFFER_POLL_INTERVAL = 100  # how often to poll buffer (ms)
+BUFFER_POLL_INTERVAL = 10  # how often to poll buffer (ms)
 WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
 LINE_FREQ = 50
 
@@ -82,6 +82,7 @@ class HPImon(QtGui.QMainWindow):
         self.buflen = WINDOW_LEN
         self.n_harmonics = 5
         self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
+        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 328.0]
 
         self.serverp = None
         if not ft_server_pid():
