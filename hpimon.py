@@ -18,6 +18,10 @@ GIL?
 data is read through socket - should release the lock
 
 
+-ft buffer updates at its own interval
+-poll buffer every x ms (x = 100 ms?)
+-send signal if buffer updated
+
 
 
 
@@ -57,7 +61,7 @@ def ft_server_pid():
 
 def start_ft_server():
     args = [SERVER_PATH] + SERVER_OPTS
-    subprocess.Popen(args)
+    return subprocess.Popen(args)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -70,9 +74,10 @@ class HPImon(QtGui.QMainWindow):
         self.n_harmonics = 5
         self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
 
+        self.serverp = None
         if not ft_server_pid():
             print('Starting server')
-            start_ft_server()
+            self.serverp = start_ft_server()
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
@@ -135,8 +140,9 @@ class HPImon(QtGui.QMainWindow):
 
     def update_snr_display(self):
         self.server_read()
-        self.compute_snr()
-        self.label_1.setText(str(self.snr_avg_mag))
+        #self.compute_snr()
+        self.label_1.setText('moi')
+        #self.label_1.setText(str(self.snr_avg_mag))
 
     def server_read(self):
         picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
@@ -147,7 +153,12 @@ class HPImon(QtGui.QMainWindow):
     def closeEvent(self, event):
         """ Confirm and close application. """
         self.timer.stop()
+        # disconnect from server
         self.rtclient.ft_client.disconnect()
+        # if we launched the server process, kill it
+        if self.serverp is not None:
+            print('Killing server process')
+            self.serverp.kill()
         event.accept()
 
 
