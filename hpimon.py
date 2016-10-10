@@ -47,6 +47,8 @@ import subprocess
 SERVER_PATH = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
 SERVER_OPTS = ['--file', '/home/jussi/Dropbox/jn_multimodal01_raw.fif']
 SERVER_BIN = op.split(SERVER_PATH)[1]
+BUFFER_POLL_INTERVAL = 100  # how often to poll buffer (ms)
+WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
 
 
 def ft_server_pid():
@@ -93,26 +95,35 @@ class HPImon(QtGui.QMainWindow):
         self.rtclient.__enter__()
         self.info = self.rtclient.get_measurement_info()
         self.init_glm()
+        # which channels to get from the buffer
+        self.picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
+                               stim=False, include=[])
 
         self.new_data.connect(self.update_snr_display)
 
         self.last_sample = self.buffer_last_sample()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.poll_buffer)
-        self.timer.start(100)
+        self.timer.start(BUFFER_POLL_INTERVAL)
 
     def buffer_last_sample(self):
         """ Return number of last sample available from server. """
         return self.rtclient.ft_client.getHeader().nSamples
-        
+
     def poll_buffer(self):
-        """ Emit a new data signal if new data is available in the 
-        buffer. """
+        """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
         if buflast > self.last_sample:
             self.new_data.emit()
             self.last_sample = buflast
-        
+
+    def fetch_buffer(self):
+        #return self.rtclient.get_data_as_epoch(n_samples=self.buflen,
+        #                                       picks=self.picks)
+        start = self.last_sample - self.buflen + 1
+        stop = self.last_sample
+        return self.rtclient.ft_client.getData([start, stop]).transpose()
+
 
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
@@ -160,17 +171,12 @@ class HPImon(QtGui.QMainWindow):
             resid_vars[self.pick_mag, 1].mean()
 
     def update_snr_display(self):
-        self.server_read()
+        buf = self.fetch_buffer()
         #self.compute_snr()
         self.label_1.setText('buffer has new data, last sample: ' +
                              str(self.last_sample))
-        #self.label_1.setText(str(self.snr_avg_mag))
+        self.label_2.setText(str(buf[0,0]))
 
-    def server_read(self):
-        picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
-                               stim=False, include=[])
-        self.data = self.rtclient.get_data_as_epoch(n_samples=self.buflen,
-                                                    picks=picks)
                                                     
 
 
