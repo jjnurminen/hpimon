@@ -47,10 +47,11 @@ import subprocess
 
 
 SERVER_PATH = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-SERVER_OPTS = ['--file', '/home/jussi/Dropbox/jn_multimodal01_raw.fif']
+SERVER_OPTS = ['--file', '/home/jussi/Dropbox/bad_203_am_raw_sss.fif']
 SERVER_BIN = op.split(SERVER_PATH)[1]
 BUFFER_POLL_INTERVAL = 100  # how often to poll buffer (ms)
 WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
+LINE_FREQ = 50
 
 
 def ft_server_pid():
@@ -78,7 +79,7 @@ class HPImon(QtGui.QMainWindow):
         super(self.__class__, self).__init__()
         # load user interface made with designer
 
-        self.buflen = 500
+        self.buflen = WINDOW_LEN
         self.n_harmonics = 5
         self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
 
@@ -94,12 +95,21 @@ class HPImon(QtGui.QMainWindow):
         self.btnQuit.clicked.connect(self.close)
         self.rtclient = FieldTripClient(host='localhost', port=1972,
                                         tmax=150, wait_max=10)
+
+        #self.rtclient.register_receive_callback(got_buffer)
+
         self.rtclient.__enter__()
         self.info = self.rtclient.get_measurement_info()
+        #self.rtclient.start_receive_thread(10)
         self.init_glm()
+
         # which channels to get from the buffer
-        self.picks = mne.pick_types(self.info, meg='grad', eeg=False, eog=True,
-                               stim=False, include=[])
+        self.pick_buf = mne.pick_types(self.info, meg=True, eeg=False,
+                                       eog=False, stim=False)
+        self.pick_meg = pick_types(self.info, meg=True, exclude=[])
+        self.pick_mag = pick_types(self.info, meg='mag', exclude=[])
+        self.pick_grad = pick_types(self.info, meg='grad', exclude=[])
+        self.nchan = len(self.pick_meg)
 
         self.new_data.connect(self.update_snr_display)
 
@@ -107,6 +117,9 @@ class HPImon(QtGui.QMainWindow):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(BUFFER_POLL_INTERVAL)
+
+
+        
 
     def buffer_last_sample(self):
         """ Return number of last sample available from server. """
@@ -120,64 +133,60 @@ class HPImon(QtGui.QMainWindow):
             self.last_sample = buflast
 
     def fetch_buffer(self):
-        #return self.rtclient.get_data_as_epoch(n_samples=self.buflen,
-        #                                       picks=self.picks)
-        start = self.last_sample - self.buflen + 1
-        stop = self.last_sample
-        return self.rtclient.ft_client.getData([start, stop]).transpose()
-
+        return self.rtclient.get_data_as_epoch(n_samples=self.buflen,
+                                               picks=self.pick_buf)
+        # directly from ft_Client - do not construct Epochs object
+        #start = self.last_sample - self.buflen + 1
+        #stop = self.last_sample
+        #return self.rtclient.ft_client.getData([start, stop]).transpose()
 
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
         sfreq = self.info['sfreq']
-        linefreq = self.info['line_freq']
-        linefreq = 50
-        linefreqs = (np.arange(self.n_harmonics + 1) + 1) * linefreq
-
-        self.pick_meg = pick_types(self.info, meg=True, exclude=[])
-        self.pick_mag = pick_types(self.info, meg='mag', exclude=[])
-        self.pick_grad = pick_types(self.info, meg='grad', exclude=[])
-        self.nchan = len(self.pick_meg)
-
-        # create general linear model for the data
+        linefreq = self.info['line_freq']  # not in FieldTrip header
+        linefreq = LINE_FREQ
+        self.linefreqs = (np.arange(self.n_harmonics + 1) + 1) * linefreq
+        # time + dc and slope terms
         t = np.arange(self.buflen) / float(sfreq)
-        model = np.empty((len(t), 2+2*(len(linefreqs)+len(self.cfreqs))))
-        model[:, 0] = t
-        model[:, 1] = np.ones(t.shape)
+        self.model = np.empty((len(t), 2+2*(len(self.linefreqs)+len(self.cfreqs))))
+        self.model[:, 0] = t
+        self.model[:, 1] = np.ones(t.shape)
         # add sine and cosine term for each freq
-        allfreqs = np.concatenate([linefreqs, self.cfreqs])
-        model[:, 2::2] = np.cos(2 * np.pi * t[:, np.newaxis] * allfreqs)
-        model[:, 3::2] = np.sin(2 * np.pi * t[:, np.newaxis] * allfreqs)
-        self.model = model
-        self.inv_model = scipy.linalg.pinv(model)
+        allfreqs = np.concatenate([self.linefreqs, self.cfreqs])
+        self.model[:, 2::2] = np.cos(2 * np.pi * t[:, np.newaxis] * allfreqs)
+        self.model[:, 3::2] = np.sin(2 * np.pi * t[:, np.newaxis] * allfreqs)
+        self.inv_model = scipy.linalg.pinv(self.model)
 
-    def compute_snr(self):
-        # drop last buffer to avoid overrun
-        self.snr_avg_grad = np.zeros([len(self.cfreqs), 1])
-        hpi_pow_grad = np.zeros([len(self.cfreqs), 1])
-        self.snr_avg_mag = np.zeros([len(self.cfreqs), 1])
-        resid_vars = np.zeros([self.nchan, 1])
-
-        coeffs = np.dot(self.inv_model, self.data)
+    def compute_snr(self, data):
+        snr_avg_grad = np.zeros(len(self.cfreqs))
+        hpi_pow_grad = np.zeros(len(self.cfreqs))
+        snr_avg_mag = np.zeros(len(self.cfreqs))
+        resid_vars = np.zeros(self.nchan)
+        coeffs = np.dot(self.inv_model, data)  # nterms * nchan
         coeffs_hpi = coeffs[2+2*len(self.linefreqs):]
-        resid_vars[:, 1] = np.var(self.data - np.dot(self.model, coeffs), 0)
+        resid_vars = np.var(data - np.dot(self.model, coeffs), 0)
         # get total power by combining sine and cosine terms
         # sinusoidal of amplitude A has power of A**2/2
         hpi_pow = (coeffs_hpi[0::2, :]**2 + coeffs_hpi[1::2, :]**2)/2
-        hpi_pow_grad[:, 1] = hpi_pow[:, self.pick_grad].mean(1)
+        # average across channel types separately
+        hpi_pow_grad_avg = hpi_pow[:, self.pick_grad].mean(1)
+        hpi_pow_mag_avg = hpi_pow[:, self.pick_mag].mean(1)
         # divide average HPI power by average variance
-        self.snr_avg_grad[:, 1] = hpi_pow_grad[:, 1] / \
-            resid_vars[self.pick_grad, 1].mean()
-        self.snr_avg_mag[:, 1] = hpi_pow[:, self.pick_mag].mean(1) / \
-            resid_vars[self.pick_mag, 1].mean()
+        snr_avg_grad = hpi_pow_grad_avg / \
+            resid_vars[self.pick_grad].mean()
+        snr_avg_mag = hpi_pow_mag_avg / \
+            resid_vars[self.pick_mag].mean()
+        return 10 * np.log10(snr_avg_grad)
+
 
     def update_snr_display(self):
         buf = self.fetch_buffer()
-        #self.compute_snr()
+        data = buf.get_data()[0,:,:].transpose()
+        snr = self.compute_snr(data)
         self.label_1.setText('buffer has new data, last sample: ' +
                              str(self.last_sample))
-        self.label_2.setText(str(buf[0,0]))
+        self.label_2.setText(str(snr))
 
                                                     
 
