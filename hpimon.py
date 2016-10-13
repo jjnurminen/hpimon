@@ -1,39 +1,23 @@
 # -*- coding: utf-8 -*-
 """
 
-Single-threaded version:
-ok but buffer updates may take too long (few hundred ms for 0,5 s buffer?)
 
-
-Multithreaded version:
+Threading:
 see e.g. 
 https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
 https://nikolak.com/pyqt-threading-tutorial/
 
-separate worker thread (data fetch)
-use of timer?
-
-
 GIL?
 data is read through socket - should release the lock
 
-
--ft buffer updates at its own interval
--poll buffer every x ms (x = 100 ms?)
--send signal if buffer updated
-
--nb: FieldTripClient can register callbacks - no need for polling :O
-
-
 TODO:
 
+high cpu usage - socket reads?
+make sure ft buffer and dacq get started in correct order; otherwise buffer size
+may not be set in dacq
 
-config reader
-disk writer for debugging
-float widgets for adjusting freqs
+
 data plotter widgets
-assemble ui dynamically (arbitrary number of freqs)?
-threading?
 
 
 
@@ -59,6 +43,11 @@ import subprocess
 import ast
 from config import Config
 
+
+DEBUG = False
+
+def debug_print(*args, **kwargs):
+    pass
 
 def ft_server_pid(procname):
     """ Tries to return the PID of the server process. """
@@ -101,12 +90,13 @@ class HPImon(QtGui.QMainWindow):
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
-        if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
-            print('Starting server')
-            self.serverp = start_ft_server(self.cfg.SERVER_PATH,
-                                           self.cfg.SERVER_OPTS.split())
-            if not ft_server_pid():
-                raise Exception('Cannot start server')
+        if False:
+            if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
+                debug_print('Starting server')
+                self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                                               self.cfg.SERVER_OPTS.split())
+                if not ft_server_pid():
+                    raise Exception('Cannot start server')
 
         self.init_widgets()
 
@@ -153,7 +143,7 @@ class HPImon(QtGui.QMainWindow):
                     grads.append(ind)
                 else:
                     raise ValueError('Unexpected channel name: ' + ch)
-        print('Got %d magnetometers and %d gradiometers' %
+        debug_print('Got %d magnetometers and %d gradiometers' %
               (len(mags), len(grads)))
         return np.array(mags), np.array(grads)
 
@@ -169,21 +159,21 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        #print('polling buffer, buffer last sample: %d, my last sample: %d' %
+        #debug_print('polling buffer, buffer last sample: %d, my last sample: %d' %
         #        (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
-            print('poll: new data')
+            debug_print('poll: new data')
             self.new_data.emit()
             self.last_sample = buflast
         else:
-            print('poll: no new data')
+            debug_print('poll: no new data')
 
     def fetch_buffer(self):
         # directly from ft_Client - do not construct Epochs object
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
-        print('fetching buffer from %d to %d' % (start, stop))
+        debug_print('fetching buffer from %d to %d' % (start, stop))
         return self.ftclient.getData([start, stop])[:, self.pick_meg]
 
     def init_glm(self):
@@ -262,7 +252,7 @@ class HPImon(QtGui.QMainWindow):
         self.ftclient.disconnect()
         # if we launched the server process, kill it
         if self.serverp is not None:
-            print('Killing server process')
+            debug_print('Killing server process')
             self.serverp.kill()
         event.accept()
 
