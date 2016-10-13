@@ -25,6 +25,18 @@ data is read through socket - should release the lock
 -nb: FieldTripClient can register callbacks - no need for polling :O
 
 
+TODO:
+
+
+config reader
+disk writer for debugging
+float widgets for adjusting freqs
+data plotter widgets
+assemble ui dynamically (arbitrary number of freqs)?
+threading?
+
+
+
 
 
 @author: jussi
@@ -46,13 +58,19 @@ import os.path as op
 import subprocess
 
 
-SERVER_PATH = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
+SERVER_PATH = '/home/jussti/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
 SERVER_OPTS = ['--file', '/home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif']
 SERVER_BIN = op.split(SERVER_PATH)[1]
 BUFFER_POLL_INTERVAL = 10  # how often to poll buffer (ms)
 WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
 LINE_FREQ = 50
+SNR_OK = 10
+SNR_BAD = -5
+SNR_COLORS = {'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}
+BAR_STYLE = 'text-align: center;'  # style for progress bar
+BAR_CHUNK_STYLE = 'margin: 2px;'  # style for progress bar chunk
 
+        
 
 def ft_server_pid():
     """ Tries to return the PID of the server process. """
@@ -82,7 +100,8 @@ class HPImon(QtGui.QMainWindow):
         self.buflen = WINDOW_LEN
         self.n_harmonics = 5
         self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
-        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 328.0]
+        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 327.5]
+        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 335.5]
 
         self.serverp = None
         if not ft_server_pid():
@@ -92,6 +111,21 @@ class HPImon(QtGui.QMainWindow):
                 raise Exception('Cannot start server')
 
         uic.loadUi('hpimon.ui', self)
+
+        # init widgets
+        # labels
+        for wnum in range(5):
+            lbname = 'label_' + str(wnum + 1)
+            self.__dict__[lbname].setText(str(self.cfreqs[wnum]) + ' Hz')
+        # progress bar
+        for wnum in range(5):
+            wname = 'progressBar_' + str(wnum + 1)
+            sty = '.QProgressBar {'
+            sty += BAR_STYLE
+            sty += ' }'
+            self.__dict__[wname].setStyleSheet(sty)
+                    
+                    
 
         self.btnQuit.clicked.connect(self.close)
         self.rtclient = FieldTripClient(host='localhost', port=1972,
@@ -129,7 +163,10 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        if buflast > self.last_sample:
+        print('polling buffer, buffer last sample: %d, my last sample: %d' %
+                (buflast, self.last_sample))
+        # buffer last sample can also decrease (reset) if streaming from file
+        if buflast != self.last_sample:
             self.new_data.emit()
             self.last_sample = buflast
 
@@ -180,16 +217,30 @@ class HPImon(QtGui.QMainWindow):
             resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
-
+    def snr_color(self, snr):
+        """ Return progress bar stylesheet according to SNR """
+        sty = 'QProgressBar {' + BAR_STYLE + '} '
+        sty += 'QProgressBar::chunk { background-color: '
+        if snr > SNR_OK:
+            sty += SNR_COLORS['good']
+        elif snr > SNR_BAD:
+            sty += SNR_COLORS['ok']
+        else:
+            sty += SNR_COLORS['bad']
+        sty += '; '
+        sty += BAR_CHUNK_STYLE
+        sty += ' }'
+        return sty
+        
     def update_snr_display(self):
         buf = self.fetch_buffer()
         data = buf.get_data()[0,:,:].transpose()
         snr = self.compute_snr(data)
-        self.label_1.setText('buffer has new data, last sample: ' +
-                             str(self.last_sample))
-        self.label_2.setText(str(snr))
-
-                                                    
+        for wnum in range(1,6):
+            wname = 'progressBar_' + str(wnum)
+            this_snr = int(np.round(snr[wnum-1]))
+            self.__dict__[wname].setValue(this_snr)
+            self.__dict__[wname].setStyleSheet(self.snr_color(this_snr))
 
 
     def closeEvent(self, event):
