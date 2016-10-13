@@ -86,26 +86,28 @@ class HPImon(QtGui.QMainWindow):
         super(self.__class__, self).__init__()
         self.apptitle = 'hpimon'
         # load user interface made with designer
+        uic.loadUi('hpimon.ui', self)
+
         self.cfg = Config()
         try:
-            self.cfg.read()
+            pass
+            #self.cfg.read()
         except ValueError:
             self.message_dialog('No config file, creating one with default values')
             self.cfg.write()
 
-        """ Set options """
+        """ Parse some options """
         self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
-        if not ft_server_pid(self.cfg.SERVER_BIN):
+        if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
             print('Starting server')
             self.serverp = start_ft_server(self.cfg.SERVER_PATH,
                                            self.cfg.SERVER_OPTS.split())
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
-        uic.loadUi('hpimon.ui', self)
 
         # init widgets
         # labels
@@ -121,7 +123,7 @@ class HPImon(QtGui.QMainWindow):
             self.__dict__[wname].setStyleSheet(sty)
 
         self.btnQuit.clicked.connect(self.close)
-        self.rtclient = FieldTripClient(host='localhost', port=1972,
+        self.rtclient = FieldTripClient(host=self.cfg.HOST, port=self.cfg.PORT,
                                         tmax=150, wait_max=10)
 
         #self.rtclient.register_receive_callback(got_buffer)

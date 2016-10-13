@@ -18,12 +18,12 @@ class Config:
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
     cfg['SERVER_OPTS'] = '--file /home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'
     cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
-    cfg['HOST'] = 'localhost'
+    cfg['HOST'] = 'alpha'
     cfg['PORT'] = 1972
     cfg['BUFFER_POLL_INTERVAL'] = 200  # how often to poll buffer (ms)
     cfg['WIN_LEN'] = 200  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = 50
-    cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 327.5]'
+    cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 328.0]'
     cfg['NHARM'] = 5
     cfg['SNR_OK'] = 10
     cfg['SNR_BAD'] = -5
