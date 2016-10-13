@@ -173,13 +173,17 @@ class HPImon(QtGui.QMainWindow):
         #        (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
+            print('poll: new data')
             self.new_data.emit()
             self.last_sample = buflast
+        else:
+            print('poll: no new data')
 
     def fetch_buffer(self):
         # directly from ft_Client - do not construct Epochs object
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
+        print('fetching buffer from %d to %d' % (start, stop))
         return self.ftclient.getData([start, stop])[:, self.pick_meg]
 
     def init_glm(self):
@@ -241,8 +245,7 @@ class HPImon(QtGui.QMainWindow):
             this_snr = int(np.round(snr[wnum-1]))
             self.__dict__[wname].setValue(this_snr)
             self.__dict__[wname].setStyleSheet(self.snr_color(this_snr))
-
-       
+      
     def message_dialog(self, msg):
         """ Show message with an 'OK' button. """
         dlg = QtGui.QMessageBox()
@@ -256,7 +259,7 @@ class HPImon(QtGui.QMainWindow):
         """ Confirm and close application. """
         self.timer.stop()
         # disconnect from server
-        self.rtclient.ft_client.disconnect()
+        self.ftclient.disconnect()
         # if we launched the server process, kill it
         if self.serverp is not None:
             print('Killing server process')
