@@ -56,35 +56,23 @@ import scipy
 from mne import pick_types
 import os.path as op
 import subprocess
+from config import Config
 
 
-SERVER_PATH = '/home/jussti/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-SERVER_OPTS = ['--file', '/home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif']
-SERVER_BIN = op.split(SERVER_PATH)[1]
-BUFFER_POLL_INTERVAL = 100  # how often to poll buffer (ms)
-WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
-LINE_FREQ = 50
-SNR_OK = 10
-SNR_BAD = -5
-SNR_COLORS = {'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}
-BAR_STYLE = 'text-align: center;'  # style for progress bar
-BAR_CHUNK_STYLE = 'margin: 2px;'  # style for progress bar chunk
-
-        
-
-def ft_server_pid():
+def ft_server_pid(procname):
     """ Tries to return the PID of the server process. """
     for proc in psutil.process_iter():
         try:
-            if proc.name() == SERVER_BIN:
+            if proc.name() == procname:
                 return proc.pid
         except psutil.AccessDenied:
             pass
     return None
 
 
-def start_ft_server():
-    args = [SERVER_PATH] + SERVER_OPTS
+def start_ft_server(bin, opts):
+    """ bin is the executable, opts is a list of opts """
+    args = [bin] + opts 
     return subprocess.Popen(args)
 
 
@@ -96,12 +84,13 @@ class HPImon(QtGui.QMainWindow):
     def __init__(self):
         super(self.__class__, self).__init__()
         # load user interface made with designer
+        c = Config()
 
-        self.buflen = WINDOW_LEN
-        self.n_harmonics = 5
-        self.cfreqs = [83.0, 143.0, 203.0, 263.0, 323.0]
-        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 327.5]
-        self.cfreqs = [293.0, 307.0, 314.0, 321.0, 335.5]
+        """ Set options """
+        self.buflen = c.WINDOW_LEN
+        self.n_harmonics = c.NHARM
+
+        self.cfreqs = [float(f) for f in c.cfreqs.split()]
 
         self.serverp = None
         if not ft_server_pid():
