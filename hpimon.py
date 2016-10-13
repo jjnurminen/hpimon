@@ -94,7 +94,7 @@ class HPImon(QtGui.QMainWindow):
             self.cfg.write()
 
         """ Set options """
-        self.cfreqs = [float(f) for f in self.cfg.CFREQS.split()]  # str to list
+        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
@@ -175,9 +175,7 @@ class HPImon(QtGui.QMainWindow):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
         sfreq = self.info['sfreq']
-        linefreq = self.info['line_freq']  # not in FieldTrip header
-        linefreq = LINE_FREQ
-        self.linefreqs = (np.arange(self.cfg.NHARM + 1) + 1) * linefreq
+        self.linefreqs = (np.arange(self.cfg.NHARM + 1) + 1) * self.cfg.LINE_FREQ
         # time + dc and slope terms
         t = np.arange(self.cfg.WIN_LEN) / float(sfreq)
         self.model = np.empty((len(t), 2+2*(len(self.linefreqs)+len(self.cfreqs))))

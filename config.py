@@ -23,6 +23,7 @@ class Config:
     cfg['BUFFER_POLL_INTERVAL'] = 200  # how often to poll buffer (ms)
     cfg['WIN_LEN'] = 200  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = 50
+    cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 327.5]'
     cfg['NHARM'] = 5
     cfg['SNR_OK'] = 10
     cfg['SNR_BAD'] = -5
