@@ -16,14 +16,14 @@ class Config:
     """ Init config dict with default options """
     cfg = dict()
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-    cfg['SERVER_OPTS'] = ' '.join(['--file', '/home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'])
+    cfg['SERVER_OPTS'] = '--file /home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'
     cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
     cfg['BUFFER_POLL_INTERVAL'] = 100  # how often to poll buffer (ms)
     cfg['WINDOW_LEN'] = 200  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = 50
     cfg['SNR_OK'] = 10
     cfg['SNR_BAD'] = -5
-    #cfg['SNR_COLORS'] = {'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}
+    cfg['SNR_COLORS'] = "{'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}"
     cfg['BAR_STYLE'] = 'text-align: center;'  # style for progress bar
     cfg['BAR_CHUNK_STYLE'] = 'margin: 2px;'  # style for progress bar chunk
 
