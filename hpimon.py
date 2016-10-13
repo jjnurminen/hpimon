@@ -61,7 +61,7 @@ import subprocess
 SERVER_PATH = '/home/jussti/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
 SERVER_OPTS = ['--file', '/home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif']
 SERVER_BIN = op.split(SERVER_PATH)[1]
-BUFFER_POLL_INTERVAL = 10  # how often to poll buffer (ms)
+BUFFER_POLL_INTERVAL = 100  # how often to poll buffer (ms)
 WINDOW_LEN = 200  # how much data to use for single SNR estimate (ms)
 LINE_FREQ = 50
 SNR_OK = 10
@@ -163,8 +163,8 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        print('polling buffer, buffer last sample: %d, my last sample: %d' %
-                (buflast, self.last_sample))
+        #print('polling buffer, buffer last sample: %d, my last sample: %d' %
+        #        (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
             self.new_data.emit()
