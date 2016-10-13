@@ -18,9 +18,12 @@ class Config:
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
     cfg['SERVER_OPTS'] = '--file /home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'
     cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
-    cfg['BUFFER_POLL_INTERVAL'] = 100  # how often to poll buffer (ms)
-    cfg['WINDOW_LEN'] = 200  # how much data to use for single SNR estimate (ms)
+    cfg['HOST'] = 'localhost'
+    cfg['PORT'] = 1972
+    cfg['BUFFER_POLL_INTERVAL'] = 200  # how often to poll buffer (ms)
+    cfg['WIN_LEN'] = 200  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = 50
+    cfg['NHARM'] = 5
     cfg['SNR_OK'] = 10
     cfg['SNR_BAD'] = -5
     cfg['SNR_COLORS'] = "{'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}"
@@ -30,7 +33,7 @@ class Config:
     def __init__(self):
         self.cfg = Config.cfg.copy()
         self.section = 'HPImon'  # global section identifier for ConfigParser
-        self.configfile = '/Temp/test.cfg'
+        self.configfile = op.expanduser('~') + '/.hpimon.cfg'
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive
         self.parser.add_section(self.section)
@@ -38,6 +41,8 @@ class Config:
 
     def read(self):
         """ Read whole config dict from disk file. """
+        if not op.isfile(self.configfile):
+            raise ValueError('No config file')
         self.parser.read(self.configfile)
         for key in self.cfg:
             try:

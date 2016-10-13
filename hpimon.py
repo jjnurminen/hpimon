@@ -56,6 +56,7 @@ import scipy
 from mne import pick_types
 import os.path as op
 import subprocess
+import ast
 from config import Config
 
 
@@ -72,7 +73,7 @@ def ft_server_pid(procname):
 
 def start_ft_server(bin, opts):
     """ bin is the executable, opts is a list of opts """
-    args = [bin] + opts 
+    args = [bin] + opts
     return subprocess.Popen(args)
 
 
@@ -83,19 +84,24 @@ class HPImon(QtGui.QMainWindow):
 
     def __init__(self):
         super(self.__class__, self).__init__()
+        self.apptitle = 'hpimon'
         # load user interface made with designer
-        c = Config()
+        self.cfg = Config()
+        try:
+            self.cfg.read()
+        except ValueError:
+            self.message_dialog('No config file, creating one with default values')
+            self.cfg.write()
 
         """ Set options """
-        self.buflen = c.WINDOW_LEN
-        self.n_harmonics = c.NHARM
-
-        self.cfreqs = [float(f) for f in c.cfreqs.split()]
+        self.cfreqs = [float(f) for f in self.cfg.CFREQS.split()]  # str to list
+        self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
-        if not ft_server_pid():
+        if not ft_server_pid(self.cfg.SERVER_BIN):
             print('Starting server')
-            self.serverp = start_ft_server(c.)
+            self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                                           self.cfg.SERVER_OPTS.split())
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
@@ -110,11 +116,9 @@ class HPImon(QtGui.QMainWindow):
         for wnum in range(5):
             wname = 'progressBar_' + str(wnum + 1)
             sty = '.QProgressBar {'
-            sty += BAR_STYLE
+            sty += self.cfg.BAR_STYLE
             sty += ' }'
             self.__dict__[wname].setStyleSheet(sty)
-                    
-                    
 
         self.btnQuit.clicked.connect(self.close)
         self.rtclient = FieldTripClient(host='localhost', port=1972,
@@ -140,7 +144,7 @@ class HPImon(QtGui.QMainWindow):
         self.last_sample = self.buffer_last_sample()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.poll_buffer)
-        self.timer.start(BUFFER_POLL_INTERVAL)
+        self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
 
 
         
@@ -160,10 +164,10 @@ class HPImon(QtGui.QMainWindow):
             self.last_sample = buflast
 
     def fetch_buffer(self):
-        return self.rtclient.get_data_as_epoch(n_samples=self.buflen,
+        return self.rtclient.get_data_as_epoch(n_samples=self.cfg.WIN_LEN,
                                                picks=self.pick_buf)
         # directly from ft_Client - do not construct Epochs object
-        #start = self.last_sample - self.buflen + 1
+        #start = self.last_sample - self.WIN_LEN + 1
         #stop = self.last_sample
         #return self.rtclient.ft_client.getData([start, stop]).transpose()
 
@@ -173,9 +177,9 @@ class HPImon(QtGui.QMainWindow):
         sfreq = self.info['sfreq']
         linefreq = self.info['line_freq']  # not in FieldTrip header
         linefreq = LINE_FREQ
-        self.linefreqs = (np.arange(self.n_harmonics + 1) + 1) * linefreq
+        self.linefreqs = (np.arange(self.cfg.NHARM + 1) + 1) * linefreq
         # time + dc and slope terms
-        t = np.arange(self.buflen) / float(sfreq)
+        t = np.arange(self.cfg.WIN_LEN) / float(sfreq)
         self.model = np.empty((len(t), 2+2*(len(self.linefreqs)+len(self.cfreqs))))
         self.model[:, 0] = t
         self.model[:, 1] = np.ones(t.shape)
@@ -208,16 +212,16 @@ class HPImon(QtGui.QMainWindow):
 
     def snr_color(self, snr):
         """ Return progress bar stylesheet according to SNR """
-        sty = 'QProgressBar {' + BAR_STYLE + '} '
+        sty = 'QProgressBar {' + self.cfg.BAR_STYLE + '} '
         sty += 'QProgressBar::chunk { background-color: '
-        if snr > SNR_OK:
-            sty += SNR_COLORS['good']
-        elif snr > SNR_BAD:
-            sty += SNR_COLORS['ok']
+        if snr > self.cfg.SNR_OK:
+            sty += self.SNR_COLORS['good']
+        elif snr > self.cfg.SNR_BAD:
+            sty += self.SNR_COLORS['ok']
         else:
-            sty += SNR_COLORS['bad']
+            sty += self.SNR_COLORS['bad']
         sty += '; '
-        sty += BAR_CHUNK_STYLE
+        sty += self.cfg.BAR_CHUNK_STYLE
         sty += ' }'
         return sty
         
@@ -230,6 +234,15 @@ class HPImon(QtGui.QMainWindow):
             this_snr = int(np.round(snr[wnum-1]))
             self.__dict__[wname].setValue(this_snr)
             self.__dict__[wname].setStyleSheet(self.snr_color(this_snr))
+
+       
+    def message_dialog(self, msg):
+        """ Show message with an 'OK' button. """
+        dlg = QtGui.QMessageBox()
+        dlg.setWindowTitle(self.apptitle)
+        dlg.setText(msg)
+        dlg.addButton(QtGui.QPushButton('Ok'), QtGui.QMessageBox.YesRole)        
+        dlg.exec_()
 
 
     def closeEvent(self, event):
