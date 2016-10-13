@@ -29,7 +29,7 @@ class Config:
 
     def __init__(self):
         self.cfg = Config.cfg.copy()
-        self.section = 'HPImon'  # global section identifier
+        self.section = 'HPImon'  # global section identifier for ConfigParser
         self.configfile = '/Temp/test.cfg'
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive

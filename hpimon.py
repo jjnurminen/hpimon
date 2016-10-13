@@ -95,7 +95,7 @@ class HPImon(QtGui.QMainWindow):
         self.serverp = None
         if not ft_server_pid():
             print('Starting server')
-            self.serverp = start_ft_server()
+            self.serverp = start_ft_server(c.)
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
