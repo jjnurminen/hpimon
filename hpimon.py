@@ -50,7 +50,7 @@ from PyQt4.QtCore import pyqtSignal
 import time
 import psutil
 import mne
-from mne.realtime import FieldTripClient
+from mne.externals import FieldTrip
 import numpy as np
 import scipy
 from mne import pick_types
@@ -108,39 +108,16 @@ class HPImon(QtGui.QMainWindow):
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
+        self.init_widgets()
 
-        # init widgets
-        # labels
-        for wnum in range(5):
-            lbname = 'label_' + str(wnum + 1)
-            self.__dict__[lbname].setText(str(self.cfreqs[wnum]) + ' Hz')
-        # progress bar
-        for wnum in range(5):
-            wname = 'progressBar_' + str(wnum + 1)
-            sty = '.QProgressBar {'
-            sty += self.cfg.BAR_STYLE
-            sty += ' }'
-            self.__dict__[wname].setStyleSheet(sty)
-
-        self.btnQuit.clicked.connect(self.close)
-        self.rtclient = FieldTripClient(host=self.cfg.HOST, port=self.cfg.PORT,
-                                        tmax=150, wait_max=10)
-
-        #self.rtclient.register_receive_callback(got_buffer)
-
-        self.rtclient.__enter__()
-        self.info = self.rtclient.get_measurement_info()
-        #self.rtclient.start_receive_thread(10)
-        self.init_glm()
-
-        # which channels to get from the buffer
-        self.pick_buf = mne.pick_types(self.info, meg=True, eeg=False,
-                                       eog=False, stim=False)
-        self.pick_meg = pick_types(self.info, meg=True, exclude=[])
-        self.pick_mag = pick_types(self.info, meg='mag', exclude=[])
-        self.pick_grad = pick_types(self.info, meg='grad', exclude=[])
+        self.ftclient = FieldTrip.Client()
+        self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
+        self.pick_mag, self.pick_grad = self.get_ch_indices()
+        self.pick_meg = np.sort(np.concatenate([self.pick_mag,
+                                                self.pick_grad]))
         self.nchan = len(self.pick_meg)
-
+        self.sfreq = self.get_header_info()['sfreq']
+        self.init_glm()
         self.new_data.connect(self.update_snr_display)
 
         self.last_sample = self.buffer_last_sample()
@@ -149,11 +126,45 @@ class HPImon(QtGui.QMainWindow):
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
 
 
-        
+    def init_widgets(self):
+        # labels
+        for wnum in range(5):
+            lbname = 'label_' + str(wnum + 1)
+            self.__dict__[lbname].setText(str(self.cfreqs[wnum]) + ' Hz')
+        # progress bars
+        for wnum in range(5):
+            wname = 'progressBar_' + str(wnum + 1)
+            sty = '.QProgressBar {'
+            sty += self.cfg.BAR_STYLE
+            sty += ' }'
+            self.__dict__[wname].setStyleSheet(sty)
+        # buttons
+        self.btnQuit.clicked.connect(self.close)
+
+    def get_ch_indices(self):
+        """ Return indices of magnetometers and gradiometers in the
+        FieldTrip data matrix """
+        grads, mags = [], []
+        for ind, ch in enumerate(self.ftclient.getHeader().labels):
+            if ch[:3] == 'MEG':
+                if ch[-1] == '1':
+                    mags.append(ind)
+                elif ch[-1] in ['2', '3']:
+                    grads.append(ind)
+                else:
+                    raise ValueError('Unexpected channel name: ' + ch)
+        print('Got %d magnetometers and %d gradiometers' %
+              (len(mags), len(grads)))
+        return np.array(mags), np.array(grads)
+
+
+    def get_header_info(self):
+        """ Get misc info from FieldTrip header """
+        return {'sfreq': self.ftclient.getHeader().fSample}
 
     def buffer_last_sample(self):
         """ Return number of last sample available from server. """
-        return self.rtclient.ft_client.getHeader().nSamples
+        return self.ftclient.getHeader().nSamples
 
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
@@ -166,20 +177,17 @@ class HPImon(QtGui.QMainWindow):
             self.last_sample = buflast
 
     def fetch_buffer(self):
-        return self.rtclient.get_data_as_epoch(n_samples=self.cfg.WIN_LEN,
-                                               picks=self.pick_buf)
         # directly from ft_Client - do not construct Epochs object
-        #start = self.last_sample - self.WIN_LEN + 1
-        #stop = self.last_sample
-        #return self.rtclient.ft_client.getData([start, stop]).transpose()
+        start = self.last_sample - self.cfg.WIN_LEN + 1
+        stop = self.last_sample
+        return self.ftclient.getData([start, stop])[:, self.pick_meg]
 
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
-        sfreq = self.info['sfreq']
         self.linefreqs = (np.arange(self.cfg.NHARM + 1) + 1) * self.cfg.LINE_FREQ
         # time + dc and slope terms
-        t = np.arange(self.cfg.WIN_LEN) / float(sfreq)
+        t = np.arange(self.cfg.WIN_LEN) / float(self.sfreq)
         self.model = np.empty((len(t), 2+2*(len(self.linefreqs)+len(self.cfreqs))))
         self.model[:, 0] = t
         self.model[:, 1] = np.ones(t.shape)
@@ -226,8 +234,7 @@ class HPImon(QtGui.QMainWindow):
         return sty
         
     def update_snr_display(self):
-        buf = self.fetch_buffer()
-        data = buf.get_data()[0,:,:].transpose()
+        data = self.fetch_buffer()
         snr = self.compute_snr(data)
         for wnum in range(1,6):
             wname = 'progressBar_' + str(wnum)
