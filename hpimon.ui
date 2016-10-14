@@ -6,210 +6,178 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>756</height>
+    <width>383</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="testButton">
-    <property name="geometry">
-     <rect>
-      <x>9</x>
-      <y>640</y>
-      <width>85</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Test</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnQuit">
-    <property name="geometry">
-     <rect>
-      <x>9</x>
-      <y>673</y>
-      <width>85</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Quit</string>
-    </property>
-   </widget>
-   <widget class="QWidget" name="gridLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>9</x>
-      <y>9</y>
-      <width>531</width>
-      <height>471</height>
-     </rect>
-    </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QProgressBar" name="progressBar_2">
-       <property name="minimum">
-        <number>-100</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v dB</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_1">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_5">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="1">
-      <widget class="QProgressBar" name="progressBar_5">
-       <property name="minimum">
-        <number>-100</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v dB</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QProgressBar" name="progressBar_1">
-       <property name="minimum">
-        <number>-100</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="textVisible">
-        <bool>true</bool>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v dB</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QProgressBar" name="progressBar_3">
-       <property name="minimum">
-        <number>-100</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v dB</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QProgressBar" name="progressBar_4">
-       <property name="minimum">
-        <number>-100</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v dB</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Frequency</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>SNR</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <zorder>testButton</zorder>
-   <zorder>btnQuit</zorder>
-   <zorder>gridLayoutWidget</zorder>
-   <zorder>label_1</zorder>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QProgressBar" name="progressBar_2">
+        <property name="minimum">
+         <number>-100</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v dB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_1">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1">
+       <widget class="QProgressBar" name="progressBar_5">
+        <property name="minimum">
+         <number>-100</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v dB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QProgressBar" name="progressBar_1">
+        <property name="minimum">
+         <number>-100</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="textVisible">
+         <bool>true</bool>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v dB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QProgressBar" name="progressBar_3">
+        <property name="minimum">
+         <number>-100</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v dB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="1">
+       <widget class="QProgressBar" name="progressBar_4">
+        <property name="minimum">
+         <number>-100</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v dB</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="btnStop">
+        <property name="text">
+         <string>Stop monitoring</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnQuit">
+        <property name="text">
+         <string>Quit</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>632</width>
+     <width>383</width>
      <height>25</height>
     </rect>
    </property>

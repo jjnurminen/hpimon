@@ -81,11 +81,12 @@ class HPImon(QtGui.QMainWindow):
         try:
             self.cfg.read()
         except ValueError:
-            self.message_dialog('No config file, creating %s one with default'
+            self.message_dialog('No config file, creating %s with default '
                                 'values. Please edit according to '
-                                'your setup aand restart.' %
+                                'your setup and restart.' %
                                 self.cfg.configfile)
             self.cfg.write()
+            self.close()
 
         """ Parse some options """
         self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)
@@ -99,6 +100,7 @@ class HPImon(QtGui.QMainWindow):
             if not ft_server_pid():
                 raise Exception('Cannot start server')
 
+        self.timer = QtCore.QTimer()
         self.init_widgets()
 
         self.ftclient = FieldTrip.Client()
@@ -112,9 +114,10 @@ class HPImon(QtGui.QMainWindow):
         self.new_data.connect(self.update_snr_display)
 
         self.last_sample = self.buffer_last_sample()
-        self.timer = QtCore.QTimer()
+        
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
+        self.statusbar.showMessage(self.msg_running())
 
 
     def init_widgets(self):
@@ -132,13 +135,31 @@ class HPImon(QtGui.QMainWindow):
         # stylesheets for progress bars
         self.progbar_styles = dict()
         for snr in ['good', 'ok', 'bad']:
-            sty = 'QProgressBar {' + self.cfg.BAR_STYLE + '} '
-            sty += 'QProgressBar::chunk { background-color: '
-            sty += self.SNR_COLORS['good']
-            sty += '; ' + self.cfg.BAR_CHUNK_STYLE + ' }'
+            sty = """QProgressBar {%s} QProgressBar::chunk { background-color:
+                     %s; %s }""" % (self.cfg.BAR_STYLE, self.SNR_COLORS[snr],
+                                    self.cfg.BAR_CHUNK_STYLE)
             self.progbar_styles[snr] = sty
+            print(sty)
         # buttons
         self.btnQuit.clicked.connect(self.close)
+        self.btnStop.clicked.connect(self.toggle_timer)
+        
+    def toggle_timer(self):
+        if self.timer.isActive():
+            self.statusbar.showMessage(self.msg_stopped())
+            self.btnStop.setText('Start monitoring')
+            self.timer.stop()
+        else:
+            self.statusbar.showMessage(self.msg_running())
+            self.btnStop.setText('Stop monitoring')
+            self.timer.start()
+    
+    def msg_running(self):
+        return ('Running, poll interval %d ms, window %d ms' %
+                (self.cfg.BUFFER_POLL_INTERVAL, self.cfg.WIN_LEN))
+
+    def msg_stopped(self):
+        return 'Stopped'
 
     def get_ch_indices(self):
         """ Return indices of magnetometers and gradiometers in the
@@ -218,6 +239,7 @@ class HPImon(QtGui.QMainWindow):
         return 10 * np.log10(snr_avg_grad)
 
     def update_snr_display(self):
+        #return
         data = self.fetch_buffer()
         snr = self.compute_snr(data)
         for wnum in range(1, 6):
