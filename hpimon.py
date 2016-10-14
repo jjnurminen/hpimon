@@ -46,8 +46,9 @@ from config import Config
 
 DEBUG = False
 
-def debug_print(*args, **kwargs):
-    pass
+def debug_print(*args):
+    if DEBUG:
+        print(*args)
 
 def ft_server_pid(procname):
     """ Tries to return the PID of the server process. """
@@ -76,13 +77,14 @@ class HPImon(QtGui.QMainWindow):
         self.apptitle = 'hpimon'
         # load user interface made with designer
         uic.loadUi('hpimon.ui', self)
-
         self.cfg = Config()
         try:
-            pass
-            #self.cfg.read()
+            self.cfg.read()
         except ValueError:
-            self.message_dialog('No config file, creating one with default values')
+            self.message_dialog('No config file, creating %s one with default'
+                                'values. Please edit according to '
+                                'your setup aand restart.' %
+                                self.cfg.configfile)
             self.cfg.write()
 
         """ Parse some options """
@@ -90,13 +92,12 @@ class HPImon(QtGui.QMainWindow):
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
-        if False:
-            if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
-                debug_print('Starting server')
-                self.serverp = start_ft_server(self.cfg.SERVER_PATH,
-                                               self.cfg.SERVER_OPTS.split())
-                if not ft_server_pid():
-                    raise Exception('Cannot start server')
+        if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
+            debug_print('Starting server')
+            self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                                           self.cfg.SERVER_OPTS.split())
+            if not ft_server_pid():
+                raise Exception('Cannot start server')
 
         self.init_widgets()
 
@@ -128,6 +129,14 @@ class HPImon(QtGui.QMainWindow):
             sty += self.cfg.BAR_STYLE
             sty += ' }'
             self.__dict__[wname].setStyleSheet(sty)
+        # stylesheets for progress bars
+        self.progbar_styles = dict()
+        for snr in ['good', 'ok', 'bad']:
+            sty = 'QProgressBar {' + self.cfg.BAR_STYLE + '} '
+            sty += 'QProgressBar::chunk { background-color: '
+            sty += self.SNR_COLORS['good']
+            sty += '; ' + self.cfg.BAR_CHUNK_STYLE + ' }'
+            self.progbar_styles[snr] = sty
         # buttons
         self.btnQuit.clicked.connect(self.close)
 
@@ -144,9 +153,8 @@ class HPImon(QtGui.QMainWindow):
                 else:
                     raise ValueError('Unexpected channel name: ' + ch)
         debug_print('Got %d magnetometers and %d gradiometers' %
-              (len(mags), len(grads)))
+                    (len(mags), len(grads)))
         return np.array(mags), np.array(grads)
-
 
     def get_header_info(self):
         """ Get misc info from FieldTrip header """
@@ -159,8 +167,8 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        #debug_print('polling buffer, buffer last sample: %d, my last sample: %d' %
-        #        (buflast, self.last_sample))
+        debug_print('polling buffer, buffer last sample: %d, my last sample: %d' %
+                    (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
             debug_print('poll: new data')
@@ -179,10 +187,11 @@ class HPImon(QtGui.QMainWindow):
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
-        self.linefreqs = (np.arange(self.cfg.NHARM + 1) + 1) * self.cfg.LINE_FREQ
+        self.linefreqs = (np.arange(self.cfg.NHARM+1)+1) * self.cfg.LINE_FREQ
         # time + dc and slope terms
         t = np.arange(self.cfg.WIN_LEN) / float(self.sfreq)
-        self.model = np.empty((len(t), 2+2*(len(self.linefreqs)+len(self.cfreqs))))
+        self.model = np.empty((len(t),
+                               2+2*(len(self.linefreqs)+len(self.cfreqs))))
         self.model[:, 0] = t
         self.model[:, 1] = np.ones(t.shape)
         # add sine and cosine term for each freq
@@ -192,10 +201,6 @@ class HPImon(QtGui.QMainWindow):
         self.inv_model = scipy.linalg.pinv(self.model)
 
     def compute_snr(self, data):
-        snr_avg_grad = np.zeros(len(self.cfreqs))
-        hpi_pow_grad = np.zeros(len(self.cfreqs))
-        snr_avg_mag = np.zeros(len(self.cfreqs))
-        resid_vars = np.zeros(self.nchan)
         coeffs = np.dot(self.inv_model, data)  # nterms * nchan
         coeffs_hpi = coeffs[2+2*len(self.linefreqs):]
         resid_vars = np.var(data - np.dot(self.model, coeffs), 0)
@@ -212,38 +217,28 @@ class HPImon(QtGui.QMainWindow):
             resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
-    def snr_color(self, snr):
-        """ Return progress bar stylesheet according to SNR """
-        sty = 'QProgressBar {' + self.cfg.BAR_STYLE + '} '
-        sty += 'QProgressBar::chunk { background-color: '
-        if snr > self.cfg.SNR_OK:
-            sty += self.SNR_COLORS['good']
-        elif snr > self.cfg.SNR_BAD:
-            sty += self.SNR_COLORS['ok']
-        else:
-            sty += self.SNR_COLORS['bad']
-        sty += '; '
-        sty += self.cfg.BAR_CHUNK_STYLE
-        sty += ' }'
-        return sty
-        
     def update_snr_display(self):
         data = self.fetch_buffer()
         snr = self.compute_snr(data)
-        for wnum in range(1,6):
+        for wnum in range(1, 6):
             wname = 'progressBar_' + str(wnum)
             this_snr = int(np.round(snr[wnum-1]))
             self.__dict__[wname].setValue(this_snr)
-            self.__dict__[wname].setStyleSheet(self.snr_color(this_snr))
-      
+            if this_snr > self.cfg.SNR_OK:
+                sty = self.progbar_styles['good']
+            elif this_snr > self.cfg.SNR_BAD:
+                sty = self.progbar_styles['ok']
+            else:
+                sty = self.progbar_styles['bad']
+            self.__dict__[wname].setStyleSheet(sty)
+
     def message_dialog(self, msg):
         """ Show message with an 'OK' button. """
         dlg = QtGui.QMessageBox()
         dlg.setWindowTitle(self.apptitle)
         dlg.setText(msg)
-        dlg.addButton(QtGui.QPushButton('Ok'), QtGui.QMessageBox.YesRole)        
+        dlg.addButton(QtGui.QPushButton('Ok'), QtGui.QMessageBox.YesRole)
         dlg.exec_()
-
 
     def closeEvent(self, event):
         """ Confirm and close application. """
