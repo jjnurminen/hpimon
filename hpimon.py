@@ -135,11 +135,10 @@ class HPImon(QtGui.QMainWindow):
         # stylesheets for progress bars
         self.progbar_styles = dict()
         for snr in ['good', 'ok', 'bad']:
-            sty = """QProgressBar {%s} QProgressBar::chunk { background-color:
-                     %s; %s }""" % (self.cfg.BAR_STYLE, self.SNR_COLORS[snr],
-                                    self.cfg.BAR_CHUNK_STYLE)
+            sty = ('QProgressBar {%s} QProgressBar::chunk { background-color: '
+                   '%s; %s }' % (self.cfg.BAR_STYLE, self.SNR_COLORS[snr],
+                                 self.cfg.BAR_CHUNK_STYLE))
             self.progbar_styles[snr] = sty
-            print(sty)
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
@@ -202,7 +201,12 @@ class HPImon(QtGui.QMainWindow):
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
         debug_print('fetching buffer from %d to %d' % (start, stop))
-        return self.ftclient.getData([start, stop])[:, self.pick_meg]
+        data = self.ftclient.getData([start, stop])
+        if data is None:
+            print('Warning: server returned no data')
+            return None
+        else:
+            return data[:, self.pick_meg]
 
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
@@ -239,18 +243,19 @@ class HPImon(QtGui.QMainWindow):
 
     def update_snr_display(self):
         buf = self.fetch_buffer()
-        snr = self.compute_snr(buf)
-        for wnum in range(1, 6):
-            wname = 'progressBar_' + str(wnum)
-            this_snr = int(np.round(snr[wnum-1]))
-            self.__dict__[wname].setValue(this_snr)
-            if this_snr > self.cfg.SNR_OK:
-                sty = self.progbar_styles['good']
-            elif this_snr > self.cfg.SNR_BAD:
-                sty = self.progbar_styles['ok']
-            else:
-                sty = self.progbar_styles['bad']
-            self.__dict__[wname].setStyleSheet(sty)
+        if buf is not None:
+            snr = self.compute_snr(buf)
+            for wnum in range(1, 6):
+                wname = 'progressBar_' + str(wnum)
+                this_snr = int(np.round(snr[wnum-1]))
+                self.__dict__[wname].setValue(this_snr)
+                if this_snr > self.cfg.SNR_OK:
+                    sty = self.progbar_styles['good']
+                elif this_snr > self.cfg.SNR_BAD:
+                    sty = self.progbar_styles['ok']
+                else:
+                    sty = self.progbar_styles['bad']
+                self.__dict__[wname].setStyleSheet(sty)
 
     def message_dialog(self, msg):
         """ Show message with an 'OK' button. """
