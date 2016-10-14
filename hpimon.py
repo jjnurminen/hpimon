@@ -199,7 +199,6 @@ class HPImon(QtGui.QMainWindow):
             debug_print('poll: no new data')
 
     def fetch_buffer(self):
-        # directly from ft_Client - do not construct Epochs object
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
         debug_print('fetching buffer from %d to %d' % (start, stop))
@@ -230,18 +229,17 @@ class HPImon(QtGui.QMainWindow):
         hpi_pow = (coeffs_hpi[0::2, :]**2 + coeffs_hpi[1::2, :]**2)/2
         # average across channel types separately
         hpi_pow_grad_avg = hpi_pow[:, self.pick_grad].mean(1)
-        hpi_pow_mag_avg = hpi_pow[:, self.pick_mag].mean(1)
+        #hpi_pow_mag_avg = hpi_pow[:, self.pick_mag].mean(1)
         # divide average HPI power by average variance
         snr_avg_grad = hpi_pow_grad_avg / \
             resid_vars[self.pick_grad].mean()
-        snr_avg_mag = hpi_pow_mag_avg / \
-            resid_vars[self.pick_mag].mean()
+        #snr_avg_mag = hpi_pow_mag_avg / \
+        #    resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
     def update_snr_display(self):
-        #return
-        data = self.fetch_buffer()
-        snr = self.compute_snr(data)
+        buf = self.fetch_buffer()
+        snr = self.compute_snr(buf)
         for wnum in range(1, 6):
             wname = 'progressBar_' + str(wnum)
             this_snr = int(np.round(snr[wnum-1]))

@@ -60,7 +60,7 @@ class Config:
             inifile = open(self.configfile, 'wt')
         except IOError:
             raise ValueError('Cannot open config file for writing')
-        for key in self.cfg.keys():
+        for key in sorted(self.cfg):
             self.parser.set(self.section, key, str(self.cfg[key]))
         self.parser.write(inifile)
         inifile.close()
