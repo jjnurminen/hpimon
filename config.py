@@ -15,9 +15,9 @@ class Config:
 
     """ Init config dict with default options """
     cfg = dict()
+    cfg['START_SERVER'] = 1  # nonzero == start server automatically
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
     cfg['SERVER_OPTS'] = '--file /home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'
-    cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
     cfg['HOST'] = 'localhost'
     cfg['PORT'] = 1972
     cfg['BUFFER_POLL_INTERVAL'] = 300  # how often to poll buffer (ms)
@@ -34,8 +34,10 @@ class Config:
 
     def __init__(self):
         self.cfg = Config.cfg.copy()
+        # attributes that will not be written out to config file
         self.section = 'hpimon'  # global section identifier for ConfigParser
         self.configfile = op.expanduser('~') + '/.hpimon.cfg'
+
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive
         self.parser.add_section(self.section)

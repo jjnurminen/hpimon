@@ -41,6 +41,8 @@ from mne import pick_types
 import os.path as op
 import subprocess
 import ast
+import traceback
+import socket
 from config import Config
 
 
@@ -77,34 +79,31 @@ class HPImon(QtGui.QMainWindow):
         self.apptitle = 'hpimon'
         # load user interface made with designer
         uic.loadUi('hpimon.ui', self)
+        self.serverp = None  # server process
+        self.timer = QtCore.QTimer()  # poll timer
+        self.ftclient = FieldTrip.Client()
         self.cfg = Config()
         try:
             self.cfg.read()
         except ValueError:
             self.message_dialog('No config file, creating %s with default '
                                 'values. Please edit according to '
-                                'your setup and restart.' %
-                                self.cfg.configfile)
+                                'your setup and restart. Define at least '
+                                'SERVER_PATH if you want the server to be '
+                                'started automatically.' % self.cfg.configfile)
             self.cfg.write()
-            self.close()
-
-        """ Parse some options """
+            sys.exit()
+        # parse some options
         self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
-        self.serverp = None
-        if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
-            debug_print('Starting server')
-            self.serverp = start_ft_server(self.cfg.SERVER_PATH,
-                                           self.cfg.SERVER_OPTS.split())
-            if not ft_server_pid():
-                raise Exception('Cannot start server')
-
-        self.timer = QtCore.QTimer()
+        self.start_server()
         self.init_widgets()
-
-        self.ftclient = FieldTrip.Client()
-        self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
+        try:
+            self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
+        except socket.error:
+            print('Cannot connect to socket')
+            sys.exit()
         self.pick_mag, self.pick_grad = self.get_ch_indices()
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
                                                 self.pick_grad]))
@@ -112,13 +111,23 @@ class HPImon(QtGui.QMainWindow):
         self.sfreq = self.get_header_info()['sfreq']
         self.init_glm()
         self.new_data.connect(self.update_snr_display)
-
         self.last_sample = self.buffer_last_sample()
-        
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
         self.statusbar.showMessage(self.msg_running())
 
+    def start_server(self):
+        """ Start RT server """
+        server_bin = op.split(self.cfg['SERVER_PATH'])[1]
+        if ft_server_pid(server_bin):
+            debug_print('A server process seems to be already running')
+        else:
+            if self.cfg.HOST == 'localhost' and self.cfg.START_SERVER:
+                debug_print('Starting server')
+                self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                                               self.cfg.SERVER_OPTS.split())
+                if not ft_server_pid():
+                    raise Exception('Cannot start server')
 
     def init_widgets(self):
         # labels
@@ -142,7 +151,7 @@ class HPImon(QtGui.QMainWindow):
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
-        
+
     def toggle_timer(self):
         if self.timer.isActive():
             self.statusbar.showMessage(self.msg_stopped())
@@ -152,7 +161,7 @@ class HPImon(QtGui.QMainWindow):
             self.statusbar.showMessage(self.msg_running())
             self.btnStop.setText('Stop monitoring')
             self.timer.start()
-    
+
     def msg_running(self):
         return ('Running, poll interval %d ms, window %d ms' %
                 (self.cfg.BUFFER_POLL_INTERVAL, self.cfg.WIN_LEN))
@@ -282,6 +291,15 @@ def main():
     app = QtGui.QApplication(sys.argv)
     hpimon = HPImon()
 
+    def my_excepthook(type, value, tback):
+        """ Custom exception handler for fatal (unhandled) exceptions:
+        report to user via GUI and terminate. """
+        tb_full = u''.join(traceback.format_exception(type, value, tback))
+        app.message_dialog('Unhandled exception: ' + tb_full)
+        sys.__excepthook__(type, value, tback)
+        app.quit()
+
+    sys.excepthook = my_excepthook
     hpimon.show()
     app.exec_()
 
