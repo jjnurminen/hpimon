@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>hpimon</class>
+ <widget class="QMainWindow" name="hpimon">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>383</width>
-    <height>301</height>
+    <width>437</width>
+    <height>297</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,7 +177,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>383</width>
+     <width>437</width>
      <height>25</height>
     </rect>
    </property>

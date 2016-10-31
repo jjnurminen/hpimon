@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 13 15:59:53 2016
 
-@author: hus20664877
+Manage config for hpimon.
+
+@author: Jussi (jnu@iki.fi)
 """
 
 import ConfigParser
@@ -10,13 +11,14 @@ import os.path as op
 
 
 class Config:
-    """ Configuration class for hpimon. Config values are read accessible as
-    instance attributes or keys, but must be set using keys. """
+    """ Configuration class for hpimon. Config values are readable as
+    instance attributes or by indexing, but must be set by indexing. """
 
     """ Init config dict with default options """
     cfg = dict()
+    cfg['SERVER_AUTOSTART'] = 1
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-    cfg['SERVER_OPTS'] = '--file /home/jussi/megdata/zhdanov_andrey/160412/aud_2positions_raw.fif'
+    cfg['SERVER_OPTS'] = '--file /home/jussi/projects/meg_scripts_git/test_data/aud_2positions_raw.fif'
     cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
     cfg['HOST'] = 'localhost'
     cfg['PORT'] = 1972
@@ -42,20 +44,22 @@ class Config:
         self.__dict__.update(self.cfg)  # make values accessible as attributes
 
     def read(self):
-        """ Read whole config dict from disk file. """
+        """ Read config dict from disk file. """
         if not op.isfile(self.configfile):
             raise ValueError('No config file')
         self.parser.read(self.configfile)
         for key in self.cfg:
             try:
                 # convert to numeric values when reading
-                self.cfg[key] = Config.asnum(self.parser.get(self.section, key))
+                self.cfg[key] = Config.asnum(self.parser.get(self.section,
+                                                             key))
             except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-                raise ValueError('Invalid configuration file, please fix or delete: ' + self.configfile)
+                raise ValueError('Invalid configuration file, please fix '
+                                 'or delete: ' + self.configfile)
         self.__dict__.update(self.cfg)
 
     def write(self):
-        """ Save current config to a disk file. """
+        """ Save current config dict to a disk file. """
         try:
             inifile = open(self.configfile, 'wt')
         except IOError:
@@ -84,7 +88,3 @@ class Config:
                 return str
 
 
-            
-        
-        
-        

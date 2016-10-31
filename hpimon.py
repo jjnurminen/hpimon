@@ -7,15 +7,17 @@ see e.g.
 https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
 https://nikolak.com/pyqt-threading-tutorial/
 
-GIL?
-data is read through socket - should release the lock
 
 TODO:
 
-high cpu usage - socket reads?
+read hpi freqs from collector / config files
+create widgets dynamically (or disable unused ones)
+high cpu usage - socket reads / np.dot?
 make sure ft buffer and dacq get started in correct order; otherwise buffer size
 may not be set in dacq
 
+
+WISHLIST:
 
 data plotter widgets
 
@@ -77,7 +79,9 @@ class HPImon(QtGui.QMainWindow):
         self.apptitle = 'hpimon'
         # load user interface made with designer
         uic.loadUi('hpimon.ui', self)
+        self.setWindowTitle(self.apptitle)
         self.cfg = Config()
+        self.timer = QtCore.QTimer()
         try:
             self.cfg.read()
         except ValueError:
@@ -93,14 +97,16 @@ class HPImon(QtGui.QMainWindow):
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
-        if self.cfg.HOST == 'localhost' and not ft_server_pid(self.cfg.SERVER_BIN):
-            debug_print('Starting server')
-            self.serverp = start_ft_server(self.cfg.SERVER_PATH,
-                                           self.cfg.SERVER_OPTS.split())
-            if not ft_server_pid():
-                raise Exception('Cannot start server')
+        if self.cfg.SERVER_AUTOSTART:
+            if (self.cfg.HOST == 'localhost' and not
+               ft_server_pid(self.cfg.SERVER_BIN)):
+                debug_print('Starting server')
+                self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                                               self.cfg.SERVER_OPTS.split())
+                if not ft_server_pid():
+                    raise Exception('Cannot start server')
 
-        self.timer = QtCore.QTimer()
+
         self.init_widgets()
 
         self.ftclient = FieldTrip.Client()
@@ -114,11 +120,10 @@ class HPImon(QtGui.QMainWindow):
         self.new_data.connect(self.update_snr_display)
 
         self.last_sample = self.buffer_last_sample()
-        
+
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
         self.statusbar.showMessage(self.msg_running())
-
 
     def init_widgets(self):
         # labels
@@ -142,7 +147,7 @@ class HPImon(QtGui.QMainWindow):
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
-        
+
     def toggle_timer(self):
         if self.timer.isActive():
             self.statusbar.showMessage(self.msg_stopped())
@@ -152,10 +157,11 @@ class HPImon(QtGui.QMainWindow):
             self.statusbar.showMessage(self.msg_running())
             self.btnStop.setText('Stop monitoring')
             self.timer.start()
-    
+
     def msg_running(self):
-        return ('Running, poll interval %d ms, window %d ms' %
-                (self.cfg.BUFFER_POLL_INTERVAL, self.cfg.WIN_LEN))
+        return ('Running [%s], poll every %d ms, window %d ms' %
+                (self.cfg.HOST, self.cfg.BUFFER_POLL_INTERVAL,
+                 self.cfg.WIN_LEN))
 
     def msg_stopped(self):
         return 'Stopped'
@@ -225,6 +231,9 @@ class HPImon(QtGui.QMainWindow):
         self.inv_model = scipy.linalg.pinv(self.model)
 
     def compute_snr(self, data):
+        #im = np.ascontiguousarray(self.inv_model)
+        #da = np.ascontiguousarray(data)
+        #coeffs = np.dot(im, da)
         coeffs = np.dot(self.inv_model, data)  # nterms * nchan
         coeffs_hpi = coeffs[2+2*len(self.linefreqs):]
         resid_vars = np.var(data - np.dot(self.model, coeffs), 0)
@@ -233,11 +242,11 @@ class HPImon(QtGui.QMainWindow):
         hpi_pow = (coeffs_hpi[0::2, :]**2 + coeffs_hpi[1::2, :]**2)/2
         # average across channel types separately
         hpi_pow_grad_avg = hpi_pow[:, self.pick_grad].mean(1)
-        #hpi_pow_mag_avg = hpi_pow[:, self.pick_mag].mean(1)
+        # hpi_pow_mag_avg = hpi_pow[:, self.pick_mag].mean(1)
         # divide average HPI power by average variance
         snr_avg_grad = hpi_pow_grad_avg / \
             resid_vars[self.pick_grad].mean()
-        #snr_avg_mag = hpi_pow_mag_avg / \
+        # snr_avg_mag = hpi_pow_mag_avg / \
         #    resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
