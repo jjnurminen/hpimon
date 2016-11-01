@@ -1,6 +1,8 @@
 # hpimon
 
-This is a realtime monitor of continuous HPI for Elekta MEG systems (TRIUX/Neuromag). NOTE: still seriously work in progress.
+This is a realtime monitor of continuous HPI for Elekta MEG systems (TRIUX/Neuromag), written in PyQt. 
+
+NOTE: still seriously work in progress.
 
 ## Installation
 
@@ -34,9 +36,9 @@ hpimon (actually the realtime server) needs to be started before you start acqui
 ## Interpreting the output
 
 
-## Warning about shutting dowm the realtime server
+## Warning about shutting down the realtime server
 
-It is necessary to cleanly shut down `neuromag2ft` (Ctrl-C or SIGTERM). If this does not happen (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+It is necessary to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). If this does not happen (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
