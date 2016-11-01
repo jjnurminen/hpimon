@@ -33,7 +33,7 @@ hpimon (actually the realtime server) needs to be started before you start acqui
 
 ## Warning about server shutdown
 
-It is necessary to cleanly shut down neuromag2ft (Ctrl-C or SIGTERM). If this does not happen, the buffer settings in the data acquisition will not be restored to their default values, which can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run neuromag2ft manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+It is necessary to cleanly shut down `neuromag2ft` (Ctrl-C or SIGTERM). If this does not happen, the buffer settings in the data acquisition will not be restored to their default values, which can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
