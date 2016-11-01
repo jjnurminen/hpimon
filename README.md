@@ -31,7 +31,7 @@ If compilation succeeds, the neuromag2ft binary should now be available under `f
 
 ## Initial configuration
 
-Run `python hpimon.py` from a command prompt. On the first run, the program will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.
+Run `python hpimon.py` from a terminal. On the first run, the program will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.
 
 ## Running
 
