@@ -10,7 +10,6 @@ https://nikolak.com/pyqt-threading-tutorial/
 
 TODO:
 
-read hpi freqs from collector / config files
 create widgets dynamically (or disable unused ones)
 high cpu usage - socket reads / np.dot?
 make sure ft buffer and dacq get started in correct order; otherwise buffer size
@@ -47,30 +46,16 @@ import traceback
 import socket
 from config import Config
 import elekta
+from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 
 
-DEBUG = False
+DEBUG = True
 
 def debug_print(*args):
     if DEBUG:
         print(*args)
 
-def ft_server_pid(procname):
-    """ Tries to return the PID of the server process. """
-    for proc in psutil.process_iter():
-        try:
-            if proc.name() == procname:
-                return proc.pid
-        except psutil.AccessDenied:
-            pass
-    return None
 
-
-def start_ft_server(bin, opts):
-    """ bin is the executable, opts is a list of opts """
-    args = [bin] + opts
-    return subprocess.Popen(args, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -109,15 +94,15 @@ class HPImon(QtGui.QMainWindow):
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
             server_bin = op.split(self.cfg.SERVER_PATH)[1]
-            if ft_server_pid(server_bin):
+            if rt_server_pid(server_bin):
                 self.message_dialog('Realtime server already running. '
                                     'Please kill it first.')
                 sys.exit()
             if self.cfg.HOST == 'localhost':
-                debug_print('Starting server')
-                self.serverp = start_ft_server(self.cfg.SERVER_PATH,
+                debug_print('starting server')
+                self.serverp = start_rt_server(self.cfg.SERVER_PATH,
                                                self.cfg.SERVER_OPTS.split())
-                if not ft_server_pid(server_bin):
+                if not rt_server_pid(server_bin):
                     self.message_dialog('Could not start realtime server.')
                     sys.exit()
 
@@ -126,7 +111,10 @@ class HPImon(QtGui.QMainWindow):
         try:
             self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
         except socket.error:
-            print('Cannot connect to socket')
+            self.message_dialog('Cannot connect to the realtime server. '
+                                'Possibly a networking problem or you have '
+                                'specified a wrong TCP port.')
+            stop_rt_server(self.serverp)
             sys.exit()
         self.pick_mag, self.pick_grad = self.get_ch_indices()
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
@@ -225,7 +213,7 @@ class HPImon(QtGui.QMainWindow):
         debug_print('fetching buffer from %d to %d' % (start, stop))
         data = self.ftclient.getData([start, stop])
         if data is None:
-            print('Warning: server returned no data')
+            debug_print('warning: server returned no data')
             return None
         else:
             return data[:, self.pick_meg]
@@ -296,11 +284,11 @@ class HPImon(QtGui.QMainWindow):
         # disconnect from server
         if self.ftclient:
             self.ftclient.disconnect()
-        # if we launched the server process, kill it
-        if self.serverp is not None:
-            debug_print('Killing the RT server process')
-            self.serverp.kill()
+        stop_rt_server(self.serverp)
         event.accept()
+
+
+
 
 
 def main():
