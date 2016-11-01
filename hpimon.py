@@ -2,27 +2,6 @@
 """
 
 
-Threading:
-see e.g. 
-https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/
-https://nikolak.com/pyqt-threading-tutorial/
-
-
-TODO:
-
-create widgets dynamically (or disable unused ones)
-high cpu usage - socket reads / np.dot?
-make sure ft buffer and dacq get started in correct order; otherwise buffer size
-may not be set in dacq
-
-
-WISHLIST:
-
-data plotter widgets
-
-
-
-
 
 @author: jussi
 """
@@ -33,7 +12,7 @@ import sys
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSignal
 import time
-import psutil
+import struct
 import FieldTrip
 import numpy as np
 import scipy.linalg
@@ -46,7 +25,7 @@ import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 
 
-DEBUG = True
+DEBUG = False
 
 def debug_print(*args):
     if DEBUG:
@@ -86,10 +65,15 @@ class HPImon(QtGui.QMainWindow):
             self.message_dialog('Cannot detect HPI frequencies and none are '
                                 'specified in the config file. Aborting.')
             sys.exit()
+        self.ncoils = len(self.cfreqs)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
         
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
+            if not op.isfile(self.cfg.SERVER_PATH):
+                self.message_dialog('Cannot find server binary at %s, please '
+                                    'check config.' % self.cfg.SERVER_PATH)
+                sys.exit()
             server_bin = op.split(self.cfg.SERVER_PATH)[1]
             if rt_server_pid(server_bin):
                 self.message_dialog('Realtime server already running. '
@@ -182,6 +166,7 @@ class HPImon(QtGui.QMainWindow):
                  self.cfg.WIN_LEN))
 
     def msg_stopped(self):
+        raise ValueError
         return 'Stopped'
 
     def get_ch_indices(self):
@@ -225,7 +210,10 @@ class HPImon(QtGui.QMainWindow):
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
         debug_print('fetching buffer from %d to %d' % (start, stop))
-        data = self.ftclient.getData([start, stop])
+        try:
+            data = self.ftclient.getData([start, stop])
+        except struct.error:  # something wrong with the buffer
+            return None
         if data is None:
             debug_print('warning: server returned no data')
             return None
@@ -272,7 +260,7 @@ class HPImon(QtGui.QMainWindow):
         buf = self.fetch_buffer()
         if buf is not None:
             snr = self.compute_snr(buf)
-            for wnum in range(1, 6):
+            for wnum in range(1, self.ncoils+1):
                 wname = 'progressBar_' + str(wnum)
                 this_snr = int(np.round(snr[wnum-1]))
                 self.__dict__[wname].setValue(this_snr)
@@ -302,9 +290,6 @@ class HPImon(QtGui.QMainWindow):
         event.accept()
 
 
-
-
-
 def main():
 
     app = QtGui.QApplication(sys.argv)
@@ -314,7 +299,9 @@ def main():
         """ Custom exception handler for fatal (unhandled) exceptions:
         report to user via GUI and terminate. """
         tb_full = u''.join(traceback.format_exception(type, value, tback))
-        app.message_dialog('Unhandled exception: ' + tb_full)
+        hpimon.message_dialog('Terminating due to unhandled exception. %s' 
+                              % tb_full)
+        stop_rt_server(hpimon.serverp)
         sys.__excepthook__(type, value, tback)
         app.quit()
 

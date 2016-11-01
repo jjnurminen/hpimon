@@ -17,14 +17,13 @@ class Config:
     """ Init config dict with default options """
     cfg = dict()
     cfg['SERVER_AUTOSTART'] = 1
-    cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
-    cfg['SERVER_OPTS'] = '--file /home/jussi/projects/meg_scripts_git/test_data/aud_2positions_raw.fif'
+    cfg['SERVER_PATH'] = '/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
+    cfg['SERVER_OPTS'] = '--chunksize 500'
     cfg['HOST'] = 'localhost'
     cfg['PORT'] = 1972
-    cfg['BUFFER_POLL_INTERVAL'] = 300  # how often to poll buffer (ms)
-    cfg['WIN_LEN'] = 300  # how much data to use for single SNR estimate (ms)
+    cfg['BUFFER_POLL_INTERVAL'] = 100  # how often to poll buffer (ms)
+    cfg['WIN_LEN'] = 500  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = ''
-    #cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 328.0]'
     cfg['HPI_FREQS'] = '[]'
     cfg['NHARM'] = 5
     # SNR limits. Maximum (coil fixed to helmet) = ~40 dB, no HPI = ~ -22 dB
