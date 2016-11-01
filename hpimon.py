@@ -34,13 +34,10 @@ from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSignal
 import time
 import psutil
-import mne
 import FieldTrip
 import numpy as np
-import scipy
-from mne import pick_types
+import scipy.linalg
 import os.path as op
-import subprocess
 import ast
 import traceback
 import socket
@@ -105,6 +102,7 @@ class HPImon(QtGui.QMainWindow):
                 if not rt_server_pid(server_bin):
                     self.message_dialog('Could not start realtime server.')
                     sys.exit()
+                time.sleep(1)  # give the server a second to get started
 
         self.init_widgets()
         self.ftclient = FieldTrip.Client()
@@ -116,6 +114,12 @@ class HPImon(QtGui.QMainWindow):
                                 'specified a wrong TCP port.')
             stop_rt_server(self.serverp)
             sys.exit()
+        # wait until the server has header info
+        
+        while not self.ftclient.getHeader():
+            debug_print('waiting for header...')
+            time.sleep(.5)
+        
         self.pick_mag, self.pick_grad = self.get_ch_indices()
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
                                                 self.pick_grad]))

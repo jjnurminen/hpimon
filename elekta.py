@@ -13,7 +13,6 @@ vars hpiFreqx
 import os.path as op
 
 COLLECTOR_CONF = '/neuro/dacq/setup/collector/conf/collector.defs'
-COLLECTOR_CONF = '/tmp/collector.defs'
 
 
 def read_collector_config():
