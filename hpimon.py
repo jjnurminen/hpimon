@@ -115,6 +115,7 @@ class HPImon(QtGui.QMainWindow):
                     raise Exception('Cannot start server')
 
         self.init_widgets()
+        self.ftclient = FieldTrip.Client()
         try:
             self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
         except socket.error:
