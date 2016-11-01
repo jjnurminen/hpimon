@@ -130,11 +130,11 @@ class HPImon(QtGui.QMainWindow):
       
     def init_widgets(self):
         # labels
-        for wnum in range(5):
+        for wnum in range(self.ncoils):
             lbname = 'label_' + str(wnum + 1)
             self.__dict__[lbname].setText(str(self.cfreqs[wnum]) + ' Hz')
         # progress bars
-        for wnum in range(5):
+        for wnum in range(self.ncoils):
             wname = 'progressBar_' + str(wnum + 1)
             sty = '.QProgressBar {'
             sty += self.cfg.BAR_STYLE
