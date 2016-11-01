@@ -44,6 +44,7 @@ import os.path as op
 import subprocess
 import ast
 from config import Config
+import elekta
 
 
 DEBUG = False
@@ -85,27 +86,31 @@ class HPImon(QtGui.QMainWindow):
         try:
             self.cfg.read()
         except ValueError:
-            self.message_dialog('No config file, creating %s with default '
-                                'values. Please edit according to '
-                                'your setup and restart.' %
+            self.message_dialog('Cannot parse config file, creating %s '
+                                'with default values. Please edit the file '
+                                'according to your setup and restart.' %
                                 self.cfg.configfile)
             self.cfg.write()
-            self.close()
-
+            sys.exit()
         """ Parse some options """
-        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)
+        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)  # in config?
+        if not self.cfreqs:  # try to autodetect
+            self.cfreqs = elekta.hpi_freqs_from_config()
+        if not self.cfreqs:
+            self.message_dialog('Cannot detect HPI frequencies and none are '
+                                'specified in the config file. Aborting.')
+            sys.exit()
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
-
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
+            server_bin = op.split(self.cfg.SERVER_PATH)[1]
             if (self.cfg.HOST == 'localhost' and not
-               ft_server_pid(self.cfg.SERVER_BIN)):
+               ft_server_pid(server_bin)):
                 debug_print('Starting server')
                 self.serverp = start_ft_server(self.cfg.SERVER_PATH,
                                                self.cfg.SERVER_OPTS.split())
                 if not ft_server_pid():
                     raise Exception('Cannot start server')
-
 
         self.init_widgets()
 
@@ -278,10 +283,11 @@ class HPImon(QtGui.QMainWindow):
         """ Confirm and close application. """
         self.timer.stop()
         # disconnect from server
-        self.ftclient.disconnect()
+        if self.ftclient:
+            self.ftclient.disconnect()
         # if we launched the server process, kill it
         if self.serverp is not None:
-            debug_print('Killing server process')
+            debug_print('Killing the RT server process')
             self.serverp.kill()
         event.accept()
 

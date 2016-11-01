@@ -19,13 +19,13 @@ class Config:
     cfg['SERVER_AUTOSTART'] = 1
     cfg['SERVER_PATH'] = '/home/jussi/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
     cfg['SERVER_OPTS'] = '--file /home/jussi/projects/meg_scripts_git/test_data/aud_2positions_raw.fif'
-    cfg['SERVER_BIN'] = op.split(cfg['SERVER_PATH'])[1]
     cfg['HOST'] = 'localhost'
     cfg['PORT'] = 1972
     cfg['BUFFER_POLL_INTERVAL'] = 300  # how often to poll buffer (ms)
     cfg['WIN_LEN'] = 300  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = 50
-    cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 328.0]'
+    #cfg['HPI_FREQS'] = '[293.0, 307.0, 314.0, 321.0, 328.0]'
+    cfg['HPI_FREQS'] = '[]'
     cfg['NHARM'] = 5
     # SNR limits. Maximum (coil fixed to helmet) = ~40 dB, no HPI = ~ -22 dB
     cfg['SNR_OK'] = 10  # lower than this is 'ok', higher is 'good'
@@ -36,7 +36,7 @@ class Config:
 
     def __init__(self):
         self.cfg = Config.cfg.copy()
-        self.section = 'hpimon'  # global section identifier for ConfigParser
+        self.section = 'hpimon'  # global section identifier
         self.configfile = op.expanduser('~') + '/.hpimon.cfg'
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive
