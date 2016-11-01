@@ -114,25 +114,35 @@ class HPImon(QtGui.QMainWindow):
                                 'specified a wrong TCP port.')
             stop_rt_server(self.serverp)
             sys.exit()
-        # wait until the server has header info
         
-        while not self.ftclient.getHeader():
-            debug_print('waiting for header...')
-            time.sleep(.5)
-        
+        # enter wait state, until the server has header info
+        self.statusbar.showMessage('Waiting for measurement to start...')
+        self.timer.timeout.connect(self.start_if_header)
+        self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
+
+    def start_if_header(self):
+        """ Start if header info has become available. """
+        debug_print('polling for header info')
+        if self.ftclient.getHeader():
+            self.start()
+
+    def start(self):
+        """ We have header info and can start running """
+        self.timer.stop()
         self.pick_mag, self.pick_grad = self.get_ch_indices()
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
                                                 self.pick_grad]))
         self.nchan = len(self.pick_meg)
         self.sfreq = self.get_header_info()['sfreq']
         self.init_glm()
-        self.new_data.connect(self.update_snr_display)
         self.last_sample = self.buffer_last_sample()
-
+        #self.last_sample = -1
+        self.new_data.connect(self.update_snr_display)
+        self.timer.timeout.disconnect(self.start_if_header)
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
         self.statusbar.showMessage(self.msg_running())
-
+      
     def init_widgets(self):
         # labels
         for wnum in range(5):
