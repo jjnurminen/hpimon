@@ -29,7 +29,9 @@ Run `hpimon.py`. On the first run, it will create a new configuration file and a
 
 ## Running
 
-hpimon needs to be started before you start acquiring data. Start it before starting acquisition or before you press 'GO!' on the acquisition control panel.
+hpimon (actually the realtime server) needs to be started before you start acquiring data.
+
+By default, hpimon manages the realtime server by itself. Shut down hpimon cleanly, so that it can shut down the server. Otherwise the buffer settings in the data acquisition might not be restored to default values, which can manifest as trouble with subsequently recorded files (MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
