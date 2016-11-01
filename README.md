@@ -35,6 +35,16 @@ hpimon (actually the realtime server) needs to be started before you start acqui
 
 ## Interpreting the output
 
+The software displays dB values for the signal-to-noise ratio of HPI coils. The thresholds are somewhat arbitrary, but green means strong, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak.
+
+If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off. There is not much that can be done about this, since the location of the coil would need to be digitized again. Usually there is some redundancy, i.e. with five coils you can afford to lose two.
+
+If the SNR of all coils suddenly decreases a lot, this may due to:
+
+-subject has moved further down in the helmet
+-a large increase in environmental interference
+-continuous HPI accidentally turned off
+
 
 ## Warning about shutting down the realtime server
 
