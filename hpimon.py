@@ -69,7 +69,8 @@ def ft_server_pid(procname):
 def start_ft_server(bin, opts):
     """ bin is the executable, opts is a list of opts """
     args = [bin] + opts
-    return subprocess.Popen(args)
+    return subprocess.Popen(args, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -94,25 +95,31 @@ class HPImon(QtGui.QMainWindow):
                                 self.cfg.configfile)
             self.cfg.write()
             sys.exit()
+
         """ Parse some options """
-        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS)  # in config?
-        if not self.cfreqs:  # try to autodetect
-            self.cfreqs = elekta.hpi_freqs_from_config()
+        linefreq_, cfreqs_ = elekta.read_collector_config()
+        self.linefreq = self.cfg.LINE_FREQ or linefreq_    
+        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS) or cfreqs_
         if not self.cfreqs:
             self.message_dialog('Cannot detect HPI frequencies and none are '
                                 'specified in the config file. Aborting.')
             sys.exit()
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
+        
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
             server_bin = op.split(self.cfg.SERVER_PATH)[1]
-            if (self.cfg.HOST == 'localhost' and not
-               ft_server_pid(server_bin)):
+            if ft_server_pid(server_bin):
+                self.message_dialog('Realtime server already running. '
+                                    'Please kill it first.')
+                sys.exit()
+            if self.cfg.HOST == 'localhost':
                 debug_print('Starting server')
                 self.serverp = start_ft_server(self.cfg.SERVER_PATH,
                                                self.cfg.SERVER_OPTS.split())
-                if not ft_server_pid():
-                    raise Exception('Cannot start server')
+                if not ft_server_pid(server_bin):
+                    self.message_dialog('Could not start realtime server.')
+                    sys.exit()
 
         self.init_widgets()
         self.ftclient = FieldTrip.Client()
@@ -226,7 +233,7 @@ class HPImon(QtGui.QMainWindow):
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
-        self.linefreqs = (np.arange(self.cfg.NHARM+1)+1) * self.cfg.LINE_FREQ
+        self.linefreqs = (np.arange(self.cfg.NHARM+1)+1) * self.linefreq
         # time + dc and slope terms
         t = np.arange(self.cfg.WIN_LEN) / float(self.sfreq)
         self.model = np.empty((len(t),
