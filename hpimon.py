@@ -36,7 +36,7 @@ from PyQt4.QtCore import pyqtSignal
 import time
 import psutil
 import mne
-from mne.externals import FieldTrip
+import FieldTrip
 import numpy as np
 import scipy
 from mne import pick_types
