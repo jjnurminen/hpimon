@@ -35,16 +35,15 @@ hpimon (actually the realtime server) needs to be started before you start acqui
 
 ## Interpreting the output
 
-The software displays dB values for the signal-to-noise ratio of HPI coils, along with corresponding colors. Green means strong signal, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak. The thresholds can be adjusted in the configuration file.
+The software displays dB values for the signal-to-noise ratio of HPI coils, along with corresponding colors. Green means strong signal, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak. The thresholds and the colors can be adjusted in the configuration file.
 
-If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off. There is not much that can be done about this, since the location of the coil would need to be digitized again. Usually there is some redundancy, i.e. with five coils you can afford to lose two.
+If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off. There is not much that can be done about this, unless you are ready to take the subject out and digitize the coil locations again. Usually there is some redundancy, i.e. with five coils you can in principle afford to lose two coils and still be able to track the head.
 
 If the SNR of all coils suddenly decreases a lot, this may due to:
 
-- subject has moved further down in the helmet
+- subject moving further away from the helmet
 - a large increase in environmental interference
 - continuous HPI accidentally turned off
-
 
 ## Warning about shutting down the realtime server
 
@@ -58,6 +57,7 @@ The line frequency and HPI frequencies are automatically read from the data acqu
 LINE_FREQ = 50
 HPI_FREQS = [293.0, 307.0, 314.0, 321.0, 328.0]
 ```
+
 
 
 
