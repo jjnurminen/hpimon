@@ -38,6 +38,7 @@ class Config:
         self.cfg = Config.cfg.copy()
         self.section = 'hpimon'  # global section identifier
         self.configfile = op.expanduser('~') + '/.hpimon.cfg'
+
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive
         self.parser.add_section(self.section)

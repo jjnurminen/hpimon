@@ -43,6 +43,8 @@ from mne import pick_types
 import os.path as op
 import subprocess
 import ast
+import traceback
+import socket
 from config import Config
 import elekta
 
@@ -113,9 +115,11 @@ class HPImon(QtGui.QMainWindow):
                     raise Exception('Cannot start server')
 
         self.init_widgets()
-
-        self.ftclient = FieldTrip.Client()
-        self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
+        try:
+            self.ftclient.connect(self.cfg.HOST, port=self.cfg.PORT)
+        except socket.error:
+            print('Cannot connect to socket')
+            sys.exit()
         self.pick_mag, self.pick_grad = self.get_ch_indices()
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
                                                 self.pick_grad]))
@@ -123,7 +127,6 @@ class HPImon(QtGui.QMainWindow):
         self.sfreq = self.get_header_info()['sfreq']
         self.init_glm()
         self.new_data.connect(self.update_snr_display)
-
         self.last_sample = self.buffer_last_sample()
 
         self.timer.timeout.connect(self.poll_buffer)
@@ -297,6 +300,15 @@ def main():
     app = QtGui.QApplication(sys.argv)
     hpimon = HPImon()
 
+    def my_excepthook(type, value, tback):
+        """ Custom exception handler for fatal (unhandled) exceptions:
+        report to user via GUI and terminate. """
+        tb_full = u''.join(traceback.format_exception(type, value, tback))
+        app.message_dialog('Unhandled exception: ' + tb_full)
+        sys.__excepthook__(type, value, tback)
+        app.quit()
+
+    sys.excepthook = my_excepthook
     hpimon.show()
     app.exec_()
 
