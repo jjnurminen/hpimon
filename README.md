@@ -4,6 +4,10 @@ This is a realtime monitor of HPI (head position indicator) signals for Elekta M
 
 NOTE: still seriously work in progress. Do not use this software for clinical or otherwise important measurements.
 
+## Overview
+
+The software relies on the FieldTrip buffer (http://www.fieldtriptoolbox.org/development/realtime/buffer), which is a standard for  streaming of multichannel data into a TCP socket. FieldTrip includes the `neuromag2ft` utility that reads from the Elekta/Neuromag data acquisition into the FieldTrip buffer. hpimon gets data from the FieldTrip buffer and computes the signal-to-noise ratio of HPI signals in realtime.
+
 ## Installation
 
 You can run the monitor either on the acquisition workstation (sinuhe), or on another computer. The simplest way is to run on sinuhe.
@@ -12,7 +16,7 @@ You can run the monitor either on the acquisition workstation (sinuhe), or on an
 
 You need to install a Python environment on sinuhe. Anaconda satisfies all requirements and can be installed without root privileges.
 
-You also need to install a realtime server (`neuromag2ft`) that streams data from Elekta data acquisition to a FieldTrip buffer. This comes with the standard FieldTrip package. Unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
+Next, unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
 
 ```
 cd fieldtrip/realtime/src/buffer/src
@@ -27,17 +31,17 @@ If compilation succeeds, the neuromag2ft binary should now be available under `f
 
 ## Initial configuration
 
-Run `hpimon.py`. On the first run, it will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.  By default, hpimon manages starting and stopping the realtime server by itself.
+Run `python hpimon.py` from a command prompt. On the first run, the program will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.
 
 ## Running
 
-hpimon (actually the realtime server) needs to be started before you start acquiring data (before you press 'GO' on the acquisition control panel).
+hpimon (actually the realtime server) needs to be started before you start acquiring data (before you press 'GO' on the acquisition control panel). By default, hpimon manages starting and stopping the realtime server by itself.
 
 ## Interpreting the output
 
-The software displays dB values for the signal-to-noise ratio of HPI coils, along with corresponding colors. Green means strong signal, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak. The thresholds and the colors can be adjusted in the configuration file.
+The software displays dB values for the signal-to-noise ratio of HPI coils, along with corresponding colors. Green means strong signal, yellow means weaker signal (possibly still ok), and red means no HPI signal, or signal too weak. The thresholds and the colors can be adjusted in the configuration file.
 
-If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off. There is not much that can be done about this, unless you are ready to take the subject out and digitize the coil locations again. Usually there is some redundancy, i.e. with five coils you can in principle afford to lose two coils and still be able to track the head.
+If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off the subject. There is not much that can be done about this, unless you are ready to take the subject out and digitize the coil locations again. Usually there is some redundancy, i.e. with five coils you can in principle afford to lose two coils and still be able to track the head.
 
 If the SNR of all coils suddenly decreases a lot, this may due to:
 
@@ -47,11 +51,11 @@ If the SNR of all coils suddenly decreases a lot, this may due to:
 
 ## Warning about shutting down the realtime server
 
-It is necessary to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). If this does not happen (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+It is necessary to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
-The line frequency and HPI frequencies are automatically read from the data acquisition config files. You can override them in the config file, like so:
+The line frequency and HPI frequencies are automatically read from the data acquisition config files. You can override them in the hpimon config file, like so:
 
 ```
 LINE_FREQ = 50
