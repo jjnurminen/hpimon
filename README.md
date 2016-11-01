@@ -35,7 +35,7 @@ Run `python hpimon.py` from a command prompt. On the first run, the program will
 
 ## Running
 
-hpimon (actually the realtime server) needs to be started before you start acquiring data (before you press 'GO' on the acquisition control panel). By default, hpimon manages starting and stopping the realtime server by itself.
+hpimon needs to be started before you start acquiring data (before you press 'GO' on the acquisition control panel). If you start it while acquiring data, it will start monitoring the next time you press 'GO'.
 
 ## Interpreting the output
 
