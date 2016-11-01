@@ -10,7 +10,7 @@ You can run the monitor either on the acquisition workstation (sinuhe), or on an
 
 You need to install a Python environment on sinuhe. Anaconda satisfies all requirements and can be installed without root privileges.
 
-You also need to install a RT server that streams data from Elekta data acquisition to a FieldTrip buffer. This comes with the standard FieldTrip package. Unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
+You also need to install a realtime server (`neuromag2ft`) that streams data from Elekta data acquisition to a FieldTrip buffer. This comes with the standard FieldTrip package. Unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
 
 ```
 cd fieldtrip/realtime/src/buffer/src
@@ -29,9 +29,11 @@ Run `hpimon.py`. On the first run, it will create a new configuration file and a
 
 ## Running
 
-hpimon (actually the realtime server) needs to be started before you start acquiring data.
+hpimon (actually the realtime server) needs to be started before you start acquiring data. By default, hpimon manages starting and stopping the realtime server by itself.
 
-By default, hpimon manages the realtime server by itself. Shut down hpimon cleanly, so that it can shut down the server. Otherwise the buffer settings in the data acquisition might not be restored to default values, which can manifest as trouble with subsequently recorded files (MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, restarting the acquisition programs from the maintenance menu will always restore the settings.
+## Warning about server shutdown
+
+It is necessary to cleanly shut down neuromag2ft (Ctrl-C or SIGTERM). If this does not happen, the buffer settings in the data acquisition will not be restored to their default values, which can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run neuromag2ft manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
