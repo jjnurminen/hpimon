@@ -1,8 +1,8 @@
 # hpimon
 
-This is a realtime monitor of continuous HPI for Elekta MEG systems (TRIUX/Neuromag), written in PyQt. 
+This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet).
 
-NOTE: still seriously work in progress.
+NOTE: still seriously work in progress. Do not use this software for clinical or otherwise important measurements.
 
 ## Installation
 
@@ -35,7 +35,7 @@ hpimon (actually the realtime server) needs to be started before you start acqui
 
 ## Interpreting the output
 
-The software displays dB values for the signal-to-noise ratio of HPI coils. The thresholds are somewhat arbitrary, but green means strong, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak.
+The software displays dB values for the signal-to-noise ratio of HPI coils, along with corresponding colors. Green means strong signal, yellow means weaker signal (possibly still quite ok), and red means no HPI signal, or signal too weak. The thresholds can be adjusted in the configuration file.
 
 If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off. There is not much that can be done about this, since the location of the coil would need to be digitized again. Usually there is some redundancy, i.e. with five coils you can afford to lose two.
 
