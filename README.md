@@ -25,15 +25,18 @@ If compilation succeeds, the neuromag2ft binary should now be available under `f
 
 ## Initial configuration
 
-Run `hpimon.py`. On the first run, it will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.
+Run `hpimon.py`. On the first run, it will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.  By default, hpimon manages starting and stopping the realtime server by itself.
 
 ## Running
 
-hpimon (actually the realtime server) needs to be started before you start acquiring data. By default, hpimon manages starting and stopping the realtime server by itself.
+hpimon (actually the realtime server) needs to be started before you start acquiring data (before you press 'GO' on the acquisition control panel).
 
-## Warning about server shutdown
+## Interpreting the output
 
-It is necessary to cleanly shut down `neuromag2ft` (Ctrl-C or SIGTERM). If this does not happen, the buffer settings in the data acquisition will not be restored to their default values, which can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+
+## Warning about shutting dowm the realtime server
+
+It is necessary to cleanly shut down `neuromag2ft` (Ctrl-C or SIGTERM). If this does not happen (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
