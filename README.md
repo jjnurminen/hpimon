@@ -1,7 +1,6 @@
 # hpimon
 
-This is a realtime continuous HPI monitor for Elekta MEG systems (TRIUX/Neuromag). NOTE: still seriously work in progress.
-
+This is a realtime monitor of continuous HPI signals for Elekta MEG systems (TRIUX/Neuromag). NOTE: still seriously work in progress.
 
 ## Installation
 
@@ -9,7 +8,7 @@ You can run the monitor either on the acquisition workstation (sinuhe), or on an
 
 ## Prerequisites
 
-You need to install a Python environment on sinuhe. Anaconda is recommended and can be installed without root privileges.
+You need to install a Python environment on sinuhe. Anaconda satisfies all requirements and can be installed without root privileges.
 
 You also need to install a RT server that streams data from Elekta data acquisition to a FieldTrip buffer. This comes with the standard FieldTrip package. Unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
 
