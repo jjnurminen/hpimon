@@ -41,9 +41,9 @@ If the SNR of a single coil drops down during the measurement, it is possible th
 
 If the SNR of all coils suddenly decreases a lot, this may due to:
 
--subject has moved further down in the helmet
--a large increase in environmental interference
--continuous HPI accidentally turned off
+- subject has moved further down in the helmet
+- a large increase in environmental interference
+- continuous HPI accidentally turned off
 
 
 ## Warning about shutting down the realtime server
