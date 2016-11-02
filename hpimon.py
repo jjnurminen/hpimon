@@ -59,7 +59,7 @@ class HPImon(QtGui.QMainWindow):
 
         """ Parse some options """
         linefreq_, cfreqs_ = elekta.read_collector_config()
-        self.linefreq = self.cfg.LINE_FREQ or linefreq_    
+        self.linefreq = self.cfg.LINE_FREQ or linefreq_
         self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS) or cfreqs_
         if not self.cfreqs:
             self.message_dialog('Cannot detect HPI frequencies and none are '
@@ -71,7 +71,7 @@ class HPImon(QtGui.QMainWindow):
             sys.exit()
         self.ncoils = len(self.cfreqs)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
-        
+
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
             if not op.isfile(self.cfg.SERVER_PATH):
@@ -130,7 +130,7 @@ class HPImon(QtGui.QMainWindow):
         self.timer.timeout.connect(self.poll_buffer)
         self.timer.start(self.cfg.BUFFER_POLL_INTERVAL)
         self.statusbar.showMessage(self.msg_running())
-      
+
     def init_widgets(self):
         # labels
         for wnum in range(5):
