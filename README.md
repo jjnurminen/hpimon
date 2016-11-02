@@ -62,19 +62,19 @@ The line frequency and HPI frequencies are normally read from the data acquisiti
 LINE_FREQ = 50
 HPI_FREQS = [293.0, 307.0, 314.0, 321.0, 328.0]
 ```
-The --chunk_size option to the realtime server is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the maximum update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second.
+The `chunk_size` option to the realtime server is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the maximum update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second.
 
-`BUFFER_POLL_INTERVAL` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `--chunk_size` option (so that polling happens more often than new data actually arrives).
+`BUFFER_POLL_INTERVAL` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `chunk_size` option (so that polling happens more often than new data actually arrives).
 
-`WIN_LEN` is length of the data used for the computations. It can be longer than `--chunk_size`, in which case overlapping chunks are used for the computations.
+`WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
 
 ## Issues
 
-The CPU usage seems extremely high at least according to top. Seems to be due to the matrix computations. Not sure if it's a real issue.
+The CPU usage seems extremely high, at least according to top. Apparently this is caused by the matrix computations. Not sure if it's a real issue.
 
 The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
 
-The frequencies should be read directly from collector via its TCP interface. Not of practical consequence, unless you change HPI frequencies via the collector interface.
+The frequencies should be read directly from collector via its TCP interface, instead of config files. Not of practical consequence, unless you change HPI frequencies directly from the collector interface.
 
 
 
