@@ -219,6 +219,7 @@ class HPImon(QtGui.QMainWindow):
         try:
             data = self.ftclient.getData([start, stop])
         except struct.error:  # something wrong with the buffer
+            debug_print('warning: errors with the buffer')
             return None
         if data is None:
             debug_print('warning: server returned no data')
