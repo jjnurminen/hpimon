@@ -70,7 +70,7 @@ The --chunk_size option to the realtime server is the size of the data chunk (in
 
 ## Issues
 
-The CPU usage seems extremely high at least according to top, due to the matrix multiplications. Not sure if it's a real issue.
+The CPU usage seems extremely high at least according to top. Seems to be due to the matrix computations. Not sure if it's a real issue.
 
 The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
 
