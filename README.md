@@ -74,7 +74,7 @@ The CPU usage seems extremely high at least according to top, due to the matrix 
 
 The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
 
-
+The frequencies should be read directly from collector via its TCP interface. Not of practical consequence, unless you change HPI frequencies via the collector interface.
 
 
 
