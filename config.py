@@ -17,7 +17,7 @@ class Config:
     """ Init config dict with default options """
     cfg = dict()
     cfg['SERVER_AUTOSTART'] = 1
-    cfg['SERVER_PATH'] = '/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
+    cfg['SERVER_PATH'] = '/home/user/neuromag2ft-3.0.2/bin/x86_64-pc-linux-gnu/neuromag2ft'
     cfg['SERVER_OPTS'] = '--chunksize 500'
     cfg['HOST'] = 'localhost'
     cfg['PORT'] = 1972
@@ -25,7 +25,7 @@ class Config:
     cfg['WIN_LEN'] = 500  # how much data to use for single SNR estimate (ms)
     cfg['LINE_FREQ'] = ''
     cfg['HPI_FREQS'] = '[]'
-    cfg['NHARM'] = 5
+    cfg['NHARM'] = 5  # number of line harmonics to use
     # SNR limits. Maximum (coil fixed to helmet) = ~40 dB, no HPI = ~ -22 dB
     cfg['SNR_OK'] = 10  # lower than this is 'ok', higher is 'good'
     cfg['SNR_BAD'] = -5  # lower than this is 'bad'

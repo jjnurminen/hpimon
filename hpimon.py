@@ -170,7 +170,6 @@ class HPImon(QtGui.QMainWindow):
                  self.cfg.WIN_LEN))
 
     def msg_stopped(self):
-        raise ValueError
         return 'Stopped'
 
     def get_ch_indices(self):
