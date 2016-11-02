@@ -2,7 +2,7 @@
 
 This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet).
 
-NOTE: still seriously work in progress. Do not use this software for clinical or otherwise important measurements.
+NOTE: still seriously work in progress. Do not use this in important measurements.
 
 ## Overview
 
@@ -48,14 +48,15 @@ If the SNR of all coils suddenly decreases a lot, this may due to:
 - subject moving further away from the helmet
 - a large increase in environmental interference
 - continuous HPI accidentally turned off
+- subject has bitten through the HPI coil wires (just kidding)
 
-## Warning about shutting down the realtime server
+## Shutting down the realtime server
 
-It is necessary to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process terminated with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. This can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+It is good to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process stopped with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. Apparently this can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
-The line frequency and HPI frequencies are automatically read from the data acquisition config files. You can override them in the hpimon config file, like so:
+The line frequency and HPI frequencies are normally read from the data acquisition config files. You can override them in the hpimon config file, like so:
 
 ```
 LINE_FREQ = 50
