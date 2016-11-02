@@ -2,7 +2,7 @@
 
 This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet).
 
-NOTE: still seriously work in progress. Do not use this in important measurements.
+NOTE: still seriously work in progress. If you use this in important measurements, you do so at your own risk.
 
 ## Overview
 
@@ -27,7 +27,7 @@ make clean
 make
 ```
 
-If compilation succeeds, the neuromag2ft binary should now be available under `fieldtrip/realtime/src/acquisition/neuromag/bin/x86_64-pc-linux-gnu/neuromag2ft`.
+If compilation succeeds, the neuromag2ft binary should now be available under `fieldtrip/realtime/src/acquisition/neuromag/bin/x86_64-pc-linux-gnu/neuromag2ft`. Check that it runs.
 
 ## Initial configuration
 
@@ -62,10 +62,23 @@ The line frequency and HPI frequencies are normally read from the data acquisiti
 LINE_FREQ = 50
 HPI_FREQS = [293.0, 307.0, 314.0, 321.0, 328.0]
 ```
+The `chunk_size` option to the realtime server is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second. Note that the chunk also affects the raw data display of the acquisition software: the display length must be a multiple of the chunk length. Value of sampling rate / 2 is reasonable, so you get updates twice per second.
 
+`BUFFER_POLL_INTERVAL` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `chunk_size` option (so that polling happens more often than new data actually arrives).
 
+`WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
 
+## (Known) issues
 
+The CPU usage seems extremely high, at least according to top. Apparently this is caused by the matrix computations. Not sure if it's a real issue.
+
+The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
+
+The frequencies should be read directly from collector via its TCP interface, instead of config files. Not of practical consequence, unless you have a habit of changing HPI frequencies directly via the collector interface.
+
+It would be cool to build the GUI dynamically, so the number of SNR bars would always match the number of HPI frequencies in use. Most sites use five frequencies though.
+
+SNR widgets could be more aesthetically pleasing.
 
 
 
