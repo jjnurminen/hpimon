@@ -74,9 +74,11 @@ The CPU usage seems extremely high, at least according to top. Apparently this i
 
 The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
 
-The frequencies should be read directly from collector via its TCP interface, instead of config files. Not of practical consequence, unless you change HPI frequencies directly from the collector interface.
+The frequencies should be read directly from collector via its TCP interface, instead of config files. Not of practical consequence, unless you have a habit of changing HPI frequencies directly via the collector interface.
 
+It would be cool to build the GUI dynamically, so the number of SNR bars would always match the number of HPI frequencies in use. Most sites use five frequencies though.
 
+SNR widgets could be more aesthetically pleasing.
 
 
 
