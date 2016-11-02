@@ -16,7 +16,7 @@ You can run the monitor either on the acquisition workstation (sinuhe), or on an
 
 You need to install a Python environment on sinuhe. Anaconda satisfies all requirements and can be installed without root privileges.
 
-Next, unpack FieldTrip into your desired location. After unpacking, you probably need to recompile neuromag2ft on sinuhe, which can be done as follows:
+Next, unpack FieldTrip into your desired location. After unpacking, you probably need to recompile `neuromag2ft` on sinuhe, which can be done as follows:
 
 ```
 cd fieldtrip/realtime/src/buffer/src
@@ -43,16 +43,16 @@ The software displays dB values for the signal-to-noise ratio of HPI coils, alon
 
 If the SNR of a single coil drops down during the measurement, it is possible that the coil has fallen off the subject. There is not much that can be done about this, unless you are ready to take the subject out and digitize the coil locations again. Usually there is some redundancy, i.e. with five coils you can in principle afford to lose two coils and still be able to track the head.
 
-If the SNR of all coils suddenly decreases a lot, this may due to:
+If the SNR of all coils suddenly decreases a lot, this may due to several reasons:
 
 - subject moving further away from the helmet
 - a large increase in environmental interference
 - continuous HPI accidentally turned off
-- subject has bitten through the HPI coil wires (just kidding)
+- subject biting through the HPI coil wires (just kidding)
 
 ## Shutting down the realtime server
 
-It is good to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process stopped with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values. Apparently this can manifest as trouble with processing the subsequently recorded files (e.g. MaxFilter does not like fiff files with a non-standard buffer length). If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
+It is good to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process stopped with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values, which may possibly cause some trouble later. If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
 
 ## Configuration
 
