@@ -2,7 +2,7 @@
 
 This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet).
 
-NOTE: still seriously work in progress. Do not use this in important measurements.
+NOTE: still seriously work in progress. If you use this in important measurements, you do so at your own risk.
 
 ## Overview
 
