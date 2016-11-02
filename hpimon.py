@@ -65,6 +65,10 @@ class HPImon(QtGui.QMainWindow):
             self.message_dialog('Cannot detect HPI frequencies and none are '
                                 'specified in the config file. Aborting.')
             sys.exit()
+        if not self.linefreq:
+            self.message_dialog('Cannot detect line frequency and none was '
+                                'specified in the config file. Aborting.')
+            sys.exit()
         self.ncoils = len(self.cfreqs)
         self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
         
