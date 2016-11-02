@@ -68,7 +68,7 @@ The `chunk_size` option to the realtime server is the size of the data chunk (in
 
 `WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
 
-## Issues
+## (Known) issues
 
 The CPU usage seems extremely high, at least according to top. Apparently this is caused by the matrix computations. Not sure if it's a real issue.
 
