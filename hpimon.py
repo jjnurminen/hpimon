@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 
+Realtime hpi monitor for Vectorview/TRIUX MEG systems.
 
-
-@author: jussi
+@author: jussi (jnu@iki.fi)
 """
 
 
@@ -120,7 +120,6 @@ class HPImon(QtGui.QMainWindow):
         self.sfreq = self.get_header_info()['sfreq']
         self.init_glm()
         self.last_sample = self.buffer_last_sample()
-        #self.last_sample = -1
         self.new_data.connect(self.update_snr_display)
         # from now on, use the timer for data buffer polling
         self.timer.timeout.disconnect(self.start_if_header)
@@ -240,9 +239,6 @@ class HPImon(QtGui.QMainWindow):
         self.inv_model = scipy.linalg.pinv(self.model)
 
     def compute_snr(self, data):
-        #im = np.ascontiguousarray(self.inv_model)
-        #da = np.ascontiguousarray(data)
-        #coeffs = np.dot(im, da)
         coeffs = np.dot(self.inv_model, data)  # nterms * nchan
         coeffs_hpi = coeffs[2+2*len(self.linefreqs):]
         resid_vars = np.var(data - np.dot(self.model, coeffs), 0)

@@ -2,7 +2,7 @@
 """
 Manage the rt server.
 
-@author: jussi
+@author: jussi (jnu@iki.fi)
 """
 
 import psutil

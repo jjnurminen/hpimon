@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Talk directly to MEG system / read config files
+Talk directly to MEG system / read acquisition config files.
 
-@author: jussi
+@author: jussi (jnu@iki.fi)
 
-hpi freqs:
-telnet localhost collector
-pass homunculus122
-vars hpiFreqx
 """
 
 import os.path as op
