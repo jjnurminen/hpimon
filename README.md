@@ -76,9 +76,9 @@ To test the monitor, you can stream data from a file. This requires `neuromag2ft
 
 You need to:
 
--start the neuromag2ft server yourself on sinuhe (set `SERVER_AUTOSTART = 0` in config, so that hpimon will not try to manage it)
--set `HOSTNAME = sinuhe` in config (or whatever the hostname of the acquisition computer is in your network)
--open firewall on sinuhe, or at least tcp port 1972. You can temporarily disable the firewall by issuing the command `/etc/init.d/iptables stop` (be aware of the security implications)
+- start the neuromag2ft server yourself on sinuhe (set `SERVER_AUTOSTART = 0` in config, so that hpimon will not try to manage it)
+- set `HOSTNAME = sinuhe` in config (or whatever the hostname of the acquisition computer is in your network)
+- open the firewall on sinuhe, or at least tcp port 1972. You can temporarily disable the firewall by issuing the command `/etc/init.d/iptables stop` (be aware of the security implications)
 
 ## (Known) issues
 
