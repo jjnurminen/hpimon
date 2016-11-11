@@ -68,6 +68,10 @@ The `chunk_size` option to the realtime server is the size of the data chunk (in
 
 `WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
 
+## Testing without acquisition 
+
+To test the monitor, you can stream data from a file. This requires `neuromag2ft` version >= 3.0.2. In the config file, specify `SERVER_OPTS = --file test_raw.fif`. Specify also `HPI_FREQS` as they are not available via the FieldTrip header. Note that the `--chunksize` option of `neuromag2ft` has no effect when streaming from a file.
+
 ## (Known) issues
 
 The CPU usage seems extremely high, at least according to top. Apparently this is caused by the matrix computations. Not sure if it's a real issue.
