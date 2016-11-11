@@ -72,6 +72,14 @@ The `chunk_size` option to the realtime server is the size of the data chunk (in
 
 To test the monitor, you can stream data from a file. This requires `neuromag2ft` version >= 3.0.2. In the config file, specify `SERVER_OPTS = --file test_raw.fif`. Specify also `HPI_FREQS` as they are not available via the FieldTrip header. Note that the `--chunksize` option of `neuromag2ft` has no effect when streaming from a file.
 
+## Running on a separate workstation
+
+You need to:
+
+-start the neuromag2ft server yourself on sinuhe (set `SERVER_AUTOSTART = 0` in config, so that hpimon will not try to manage it)
+-set `HOSTNAME = sinuhe` in config (or whatever the hostname of the acquisition computer is in your network)
+-open firewall on sinuhe, or at least tcp port 1972. You can temporarily disable the firewall by issuing the command `/etc/init.d/iptables stop` (be aware of the security implications)
+
 ## (Known) issues
 
 The CPU usage seems extremely high, at least according to top. Apparently this is caused by the matrix computations. Not sure if it's a real issue.
