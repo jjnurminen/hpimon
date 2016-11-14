@@ -27,11 +27,10 @@ from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 
 DEBUG = False
 
+
 def debug_print(*args):
     if DEBUG:
         print(*args)
-
-
 
 
 class HPImon(QtGui.QMainWindow):
@@ -303,7 +302,7 @@ def main():
         """ Custom exception handler for fatal (unhandled) exceptions:
         report to user via GUI and terminate. """
         tb_full = u''.join(traceback.format_exception(type, value, tback))
-        hpimon.message_dialog('Terminating due to unhandled exception. %s' 
+        hpimon.message_dialog('Terminating due to unhandled exception. %s'
                               % tb_full)
         stop_rt_server(hpimon.serverp)
         sys.__excepthook__(type, value, tback)
@@ -316,4 +315,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
