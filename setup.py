@@ -15,6 +15,7 @@ setup(name='hpimon',
       author_email='jnu@iki.fi',
       license='MIT',
       url='https://github.com/jjnurminen/hpimon',
+      include_package_data=True,
       entry_points={
           'gui_scripts': ['hpimon = hpimon:main']
       })
