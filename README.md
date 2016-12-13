@@ -62,11 +62,25 @@ The line frequency and HPI frequencies are normally read from the data acquisiti
 LINE_FREQ = 50
 HPI_FREQS = [293.0, 307.0, 314.0, 321.0, 328.0]
 ```
-The `chunk_size` option to the realtime server is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second. Note that the chunk also affects the raw data display of the acquisition software: the display length must be a multiple of the chunk length. Value of sampling rate / 2 is reasonable, so you get updates twice per second.
+`SERVER_OPTS` are the options passed to `neuromag2ft`. The `chunk_size` option is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second. Note that the chunk also affects the raw data display of the acquisition software: the display length must be a multiple of the chunk length. Value of sampling rate / 2 is reasonable, so you get updates twice per second.
+
+If you don't want hpimon to start and stop the server, specify `SERVER_AUTOSTART = 0`.
 
 `BUFFER_POLL_INTERVAL` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `chunk_size` option (so that polling happens more often than new data actually arrives).
 
 `WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
+
+## Testing without acquisition 
+
+To test the monitor, you can stream data from a file. This requires `neuromag2ft` version >= 3.0.2. In the config file, specify `SERVER_OPTS = --file test_raw.fif`. Specify also `HPI_FREQS` as they are not available via the FieldTrip header. Note that the `--chunksize` option of `neuromag2ft` has no effect when streaming from a file.
+
+## Running on a separate workstation
+
+You need to:
+
+- start the neuromag2ft server yourself on sinuhe (set `SERVER_AUTOSTART = 0` in config, so that hpimon will not try to manage it)
+- set `HOSTNAME = sinuhe` in config (or whatever the hostname of the acquisition computer is in your network)
+- open the firewall on sinuhe, or at least tcp port 1972. You can temporarily disable the firewall by issuing the command `/etc/init.d/iptables stop` (be aware of the security implications)
 
 ## (Known) issues
 
