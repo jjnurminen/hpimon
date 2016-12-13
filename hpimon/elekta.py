@@ -8,15 +8,13 @@ Talk directly to MEG system / read acquisition config files.
 
 import os.path as op
 
-COLLECTOR_CONF = '/neuro/dacq/setup/collector/conf/collector.defs'
 
-
-def read_collector_config():
+def read_collector_config(cfg_file):
     """ Read parameters from collector setup file. """
     hpifreqs = []
     linefreq = None
-    if op.isfile(COLLECTOR_CONF):
-        with open(COLLECTOR_CONF, 'r') as f:
+    if op.isfile(cfg_file):
+        with open(cfg_file, 'r') as f:
             flines = f.read().splitlines()
         for line in flines:
             lit = line.split()

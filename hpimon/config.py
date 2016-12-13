@@ -32,12 +32,12 @@ class Config:
     cfg['SNR_COLORS'] = "{'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}"
     cfg['BAR_STYLE'] = 'text-align: center;'  # style for progress bar
     cfg['BAR_CHUNK_STYLE'] = 'margin: 2px;'  # style for progress bar chunk
+    cfg['COLLECTOR_CONFIG'] = '/neuro/dacq/setup/collector/conf/collector.defs'
 
     def __init__(self):
         self.cfg = Config.cfg.copy()
         self.section = 'hpimon'  # global section identifier
         self.configfile = op.expanduser('~') + '/.hpimon.cfg'
-
         self.parser = ConfigParser.SafeConfigParser()
         self.parser.optionxform = str  # make it case sensitive
         self.parser.add_section(self.section)

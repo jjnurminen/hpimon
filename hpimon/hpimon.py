@@ -57,7 +57,7 @@ class HPImon(QtGui.QMainWindow):
             sys.exit()
 
         """ Parse some options """
-        linefreq_, cfreqs_ = elekta.read_collector_config()
+        linefreq_, cfreqs_ = elekta.read_collector_config(self.cfg.COLLECTOR_CONFIG)
         self.linefreq = self.cfg.LINE_FREQ or linefreq_
         self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS) or cfreqs_
         if not self.cfreqs:
