@@ -17,7 +17,6 @@ import FieldTrip
 import numpy as np
 import scipy.linalg
 import os.path as op
-import ast
 import traceback
 import socket
 from config import Config
@@ -100,7 +99,7 @@ class HPImon(QtGui.QMainWindow):
                                 'specified a wrong TCP port.')
             stop_rt_server(self.serverp)
             sys.exit()
-        
+
         """ Poll using timer until header info becomes available """
         self.statusbar.showMessage('Waiting for measurement to start...')
         self.timer.timeout.connect(self.start_if_header)
