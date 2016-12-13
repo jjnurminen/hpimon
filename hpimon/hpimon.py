@@ -59,7 +59,7 @@ class HPImon(QtGui.QMainWindow):
         """ Parse some options """
         linefreq_, cfreqs_ = elekta.read_collector_config(self.cfg.COLLECTOR_CONFIG)
         self.linefreq = self.cfg.LINE_FREQ or linefreq_
-        self.cfreqs = ast.literal_eval(self.cfg.HPI_FREQS) or cfreqs_
+        self.cfreqs = self.cfg.HPI_FREQS or cfreqs_
         if not self.cfreqs:
             self.message_dialog('Cannot detect HPI frequencies and none are '
                                 'specified in the config file. Aborting.')
@@ -69,7 +69,6 @@ class HPImon(QtGui.QMainWindow):
                                 'specified in the config file. Aborting.')
             sys.exit()
         self.ncoils = len(self.cfreqs)
-        self.SNR_COLORS = ast.literal_eval(self.cfg.SNR_COLORS)  # str to dict
 
         self.serverp = None
         if self.cfg.SERVER_AUTOSTART:
@@ -149,7 +148,7 @@ class HPImon(QtGui.QMainWindow):
         self.progbar_styles = dict()
         for snr in ['good', 'ok', 'bad']:
             sty = ('QProgressBar {%s} QProgressBar::chunk { background-color: '
-                   '%s; %s }' % (self.cfg.BAR_STYLE, self.SNR_COLORS[snr],
+                   '%s; %s }' % (self.cfg.BAR_STYLE, self.cfg.SNR_COLORS[snr],
                                  self.cfg.BAR_CHUNK_STYLE))
             self.progbar_styles[snr] = sty
         # buttons
