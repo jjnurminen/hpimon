@@ -10,8 +10,11 @@ from setuptools import setup
 
 setup(name='hpimon',
       version='0.1',
-      description = 'Continuous HPI monitor for Elekta MEG systems',
+      description='Continuous HPI monitor for Elekta MEG systems',
       author='Jussi Nurminen',
-      author_email = 'jnu@iki.fi',
+      author_email='jnu@iki.fi',
       license='MIT',
-      zip_safe=False)
+      url='https://github.com/jjnurminen/hpimon',
+      entry_points={
+          'gui_scripts': ['hpimon = hpimon:main']
+      })
