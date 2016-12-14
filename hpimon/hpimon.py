@@ -42,10 +42,8 @@ class HPImon(QtGui.QMainWindow):
         super(self.__class__, self).__init__()
         self.apptitle = 'hpimon'
         # load user interface made with designer
-        uifile = 'hpimon.ui'
-        if not op.isfile(uifile):
-            uifile = resource_filename(Requirement.parse('hpimon'), uifile)
-        print(uifile)
+        uifile = resource_filename(Requirement.parse('hpimon'),
+                                   'hpimon/hpimon.ui')
         uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
         self.cfg = Config()
