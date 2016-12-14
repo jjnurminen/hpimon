@@ -11,7 +11,7 @@ from __future__ import print_function
 import sys
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSignal
-from pkg_resources import Requirement, resource_filename
+from pkg_resources import resource_filename
 import time
 import struct
 import FieldTrip
@@ -42,8 +42,7 @@ class HPImon(QtGui.QMainWindow):
         super(self.__class__, self).__init__()
         self.apptitle = 'hpimon'
         # load user interface made with designer
-        uifile = resource_filename(Requirement.parse('hpimon'),
-                                   'hpimon/hpimon.ui')
+        uifile = resource_filename(__name__, 'hpimon.ui')
         uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
         self.cfg = Config()

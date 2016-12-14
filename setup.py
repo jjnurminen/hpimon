@@ -17,5 +17,5 @@ setup(name='hpimon',
       url='https://github.com/jjnurminen/hpimon',
       include_package_data=True,
       entry_points={
-          'gui_scripts': ['hpimon = hpimon:main']
+          'gui_scripts': ['hpimon = hpimon.hpimon:main']
       })
