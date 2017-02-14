@@ -6,11 +6,13 @@ Manage config for hpimon.
 @author: Jussi (jnu@iki.fi)
 """
 
-from __future__ import print_function
 import ConfigParser
 import os.path as op
 import ast
 import defaultconfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Config:
@@ -34,14 +36,14 @@ class Config:
             try:
                 self.read()
             except ValueError:
-                print('Config: no config file, trying to create a default one')
+                logger.info('no config file, trying to create a default one')
                 self.write()
 
     def read(self):
         """ Read config dict from disk file. """
         if not op.isfile(self.configfile):
             raise ValueError('No config file')
-        print('Config: reading from %s' % self.configfile)
+        logger.info('reading from %s' % self.configfile)
         self.parser.read(self.configfile)
         cfgtxt = self.parser._sections[self.section]  # dict
         self.cfg = self._untextify(cfgtxt)  # dict values -> Python types

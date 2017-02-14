@@ -7,7 +7,6 @@ Realtime hpi monitor for Vectorview/TRIUX MEG systems.
 """
 
 
-from __future__ import print_function
 import sys
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSignal
@@ -23,14 +22,10 @@ import socket
 from config import Config
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
+import logging
 
-
-DEBUG = False
-
-
-def debug_print(*args):
-    if DEBUG:
-        print(*args)
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -83,7 +78,7 @@ class HPImon(QtGui.QMainWindow):
                                     'Please kill it first.')
                 sys.exit()
             if self.cfg.HOST == 'localhost':
-                debug_print('starting server')
+                logger.debug('starting server')
                 self.serverp = start_rt_server(self.cfg.SERVER_PATH,
                                                self.cfg.SERVER_OPTS.split())
                 if not rt_server_pid(server_bin):
@@ -109,7 +104,7 @@ class HPImon(QtGui.QMainWindow):
 
     def start_if_header(self):
         """ Start if header info has become available. """
-        debug_print('polling for header info')
+        logger.debug('polling for header info')
         if self.ftclient.getHeader():
             self.start()
 
@@ -123,7 +118,7 @@ class HPImon(QtGui.QMainWindow):
         self.sfreq = self.get_header_info()['sfreq']
         self.init_glm()
         self.last_sample = self.buffer_last_sample()
-        self.new_data.connect(self.update_snr_display)
+        self.new_data.connect(self.update_display)
         # from now on, use the timer for data buffer polling
         self.timer.timeout.disconnect(self.start_if_header)
         self.timer.timeout.connect(self.poll_buffer)
@@ -186,8 +181,8 @@ class HPImon(QtGui.QMainWindow):
                     grads.append(ind)
                 else:
                     raise ValueError('Unexpected channel name: ' + ch)
-        debug_print('Got %d magnetometers and %d gradiometers' %
-                    (len(mags), len(grads)))
+        logger.debug('got %d magnetometers and %d gradiometers' %
+                     (len(mags), len(grads)))
         return np.array(mags), np.array(grads)
 
     def get_header_info(self):
@@ -201,27 +196,25 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        debug_print('polling buffer, buffer last sample: %d, my last sample: %d' %
-                    (buflast, self.last_sample))
+        logger.debug('polling, buffer last sample: %d, my last sample: %d' %
+                     (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
-            debug_print('poll: new data')
+            logger.debug('new data in buffer')
             self.new_data.emit()
             self.last_sample = buflast
-        else:
-            debug_print('poll: no new data')
 
     def fetch_buffer(self):
         start = self.last_sample - self.cfg.WIN_LEN + 1
         stop = self.last_sample
-        debug_print('fetching buffer from %d to %d' % (start, stop))
+        logger.debug('fetching buffer from %d to %d' % (start, stop))
         try:
             data = self.ftclient.getData([start, stop])
         except struct.error:  # something wrong with the buffer
-            debug_print('warning: errors with the buffer')
+            logger.warning('errors with the buffer')
             return None
         if data is None:
-            debug_print('warning: server returned no data')
+            logger.warning('server returned no data')
             return None
         else:
             return data[:, self.pick_meg]
@@ -259,9 +252,18 @@ class HPImon(QtGui.QMainWindow):
         #    resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
-    def update_snr_display(self):
+    def update_display(self):
         buf = self.fetch_buffer()
         if buf is not None:
+            # update saturation widget
+            vars = np.var(buf, axis=0)
+            gradvar = vars[self.pick_grad] < self.cfg.GRAD_MIN_VAR
+            magvar = vars[self.pick_mag] < self.cfg.MAG_MIN_VAR
+            logger.debug(vars[self.pick_grad])
+            logger.debug(vars[self.pick_mag])
+            nsat = np.count_nonzero(gradvar) + np.count_nonzero(magvar)
+            self.progressBar_sat.setValue(nsat)
+            # update snr widgets
             snr = self.compute_snr(buf)
             for wnum in range(1, self.ncoils+1):
                 wname = 'progressBar_' + str(wnum)
