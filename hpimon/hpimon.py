@@ -53,7 +53,8 @@ class HPImon(QtGui.QMainWindow):
             sys.exit()
 
         """ Parse some options """
-        linefreq_, cfreqs_ = elekta.read_collector_config(self.cfg.COLLECTOR_CONFIG)
+        linefreq_, cfreqs_ = elekta.read_collector_config(self.cfg.
+                                                          COLLECTOR_CONFIG)
         self.linefreq = self.cfg.LINE_FREQ or linefreq_
         self.cfreqs = self.cfg.HPI_FREQS or cfreqs_
         if not self.cfreqs:
@@ -126,27 +127,31 @@ class HPImon(QtGui.QMainWindow):
         self.statusbar.showMessage(self.msg_running())
 
     def init_widgets(self):
-        # labels
-        for wnum in range(5):
-            lbname = 'label_' + str(wnum + 1)
-            if wnum < self.ncoils:
-                self.__dict__[lbname].setText(str(self.cfreqs[wnum]) + ' Hz')
-            else:
-                self.__dict__[lbname].setText('not in use')
-        # progress bars
+        # create SNR labels and add to grid
         for wnum in range(self.ncoils):
-            wname = 'progressBar_' + str(wnum + 1)
-            sty = '.QProgressBar {'
-            sty += self.cfg.BAR_STYLE
-            sty += ' }'
-            self.__dict__[wname].setStyleSheet(sty)
-        # stylesheets for progress bars
+            label = QtGui.QLabel()
+            label.setText(str(self.cfreqs[wnum]) + ' Hz')
+            self.gridLayout_SNR.addWidget(label, wnum, 0)
+        # create SNR progress bars dynamically and add to grid
+        self.progbars_SNR = list()
+        for wnum in range(self.ncoils):
+            progbar = QtGui.QProgressBar()
+            progbar.setMinimum(100)
+            progbar.setMaximum(100)
+            progbar.setValue(0)
+            progbar.setFormat(u'%v dB')
+            progbar.setTextVisible(True)
+            sty = '.QProgressBar {%s }' % self.cfg.BAR_STYLE
+            progbar.setStyleSheet(sty)
+            self.gridLayout_SNR.addWidget(progbar, wnum, 0)
+            self.progbars_SNR.append(progbar)
+        # create stylesheets for progress bars, according to goodness of value
         self.progbar_styles = dict()
-        for snr in ['good', 'ok', 'bad']:
+        for val in ['good', 'ok', 'bad']:
             sty = ('QProgressBar {%s} QProgressBar::chunk { background-color: '
-                   '%s; %s }' % (self.cfg.BAR_STYLE, self.cfg.SNR_COLORS[snr],
+                   '%s; %s }' % (self.cfg.BAR_STYLE, self.cfg.BAR_COLORS[val],
                                  self.cfg.BAR_CHUNK_STYLE))
-            self.progbar_styles[snr] = sty
+            self.progbar_styles[val] = sty
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
@@ -262,20 +267,26 @@ class HPImon(QtGui.QMainWindow):
             logger.debug(vars[self.pick_grad])
             logger.debug(vars[self.pick_mag])
             nsat = np.count_nonzero(gradvar) + np.count_nonzero(magvar)
+            if nsat < self.cfg.SAT_OK:
+                sty = self.progbar_styles['good']
+            elif nsat < self.cfg.SAT_BAD:
+                sty = self.progbar_styles['ok']
+            else:
+                sty = self.progbar_styles['bad']
             self.progressBar_sat.setValue(nsat)
+            self.progressBar_sat.setStyleSheet(sty)
             # update snr widgets
             snr = self.compute_snr(buf)
-            for wnum in range(1, self.ncoils+1):
-                wname = 'progressBar_' + str(wnum)
-                this_snr = int(np.round(snr[wnum-1]))
-                self.__dict__[wname].setValue(this_snr)
+            for wnum in range(self.ncoils):
+                this_snr = int(np.round(snr[wnum]))
+                self.progbars_SNR[wnum].setValue(this_snr)
                 if this_snr > self.cfg.SNR_OK:
                     sty = self.progbar_styles['good']
                 elif this_snr > self.cfg.SNR_BAD:
                     sty = self.progbar_styles['ok']
                 else:
                     sty = self.progbar_styles['bad']
-                self.__dict__[wname].setStyleSheet(sty)
+                self.progbars_SNR[wnum].setStyleSheet(sty)
 
     def message_dialog(self, msg):
         """ Show message with an 'OK' button. """

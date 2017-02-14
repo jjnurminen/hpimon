@@ -31,7 +31,9 @@ cfg['NHARM'] = 5  # number of line harmonics to use
 # SNR limits. Maximum (coil fixed to helmet) = ~40 dB, no HPI = ~ -22 dB
 cfg['SNR_OK'] = 10  # lower than this is 'ok', higher is 'good'
 cfg['SNR_BAD'] = -5  # lower than this is 'bad'
-cfg['SNR_COLORS'] = {'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}
+cfg['SAT_OK'] = 5
+cfg['SAT_BAD'] = 15
+cfg['BAR_COLORS'] = {'bad': '#f44242', 'ok': '#eff700', 'good': '#57cc2c'}
 cfg['BAR_STYLE'] = 'text-align: center;'  # style for progress bar
 cfg['BAR_CHUNK_STYLE'] = 'margin: 2px;'  # style for progress bar chunk
 cfg['COLLECTOR_CONFIG'] = '/neuro/dacq/setup/collector/conf/collector.defs'
