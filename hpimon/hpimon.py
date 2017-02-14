@@ -136,14 +136,14 @@ class HPImon(QtGui.QMainWindow):
         self.progbars_SNR = list()
         for wnum in range(self.ncoils):
             progbar = QtGui.QProgressBar()
-            progbar.setMinimum(100)
+            progbar.setMinimum(-100)
             progbar.setMaximum(100)
             progbar.setValue(0)
             progbar.setFormat(u'%v dB')
             progbar.setTextVisible(True)
             sty = '.QProgressBar {%s }' % self.cfg.BAR_STYLE
             progbar.setStyleSheet(sty)
-            self.gridLayout_SNR.addWidget(progbar, wnum, 0)
+            self.gridLayout_SNR.addWidget(progbar, wnum, 1)
             self.progbars_SNR.append(progbar)
         # create stylesheets for progress bars, according to goodness of value
         self.progbar_styles = dict()
@@ -262,10 +262,10 @@ class HPImon(QtGui.QMainWindow):
         if buf is not None:
             # update saturation widget
             vars = np.var(buf, axis=0)
-            gradvar = vars[self.pick_grad] < self.cfg.GRAD_MIN_VAR
-            magvar = vars[self.pick_mag] < self.cfg.MAG_MIN_VAR
-            logger.debug(vars[self.pick_grad])
-            logger.debug(vars[self.pick_mag])
+            gradvar = vars[self.pick_grad] <= self.cfg.GRAD_MIN_VAR
+            magvar = vars[self.pick_mag] <= self.cfg.MAG_MIN_VAR
+            # logger.debug(vars[self.pick_grad])
+            # logger.debug(vars[self.pick_mag])
             nsat = np.count_nonzero(gradvar) + np.count_nonzero(magvar)
             if nsat < self.cfg.SAT_OK:
                 sty = self.progbar_styles['good']
@@ -279,6 +279,7 @@ class HPImon(QtGui.QMainWindow):
             snr = self.compute_snr(buf)
             for wnum in range(self.ncoils):
                 this_snr = int(np.round(snr[wnum]))
+                logger.debug('coil %d: snr %d', wnum, this_snr)
                 self.progbars_SNR[wnum].setValue(this_snr)
                 if this_snr > self.cfg.SNR_OK:
                     sty = self.progbar_styles['good']
