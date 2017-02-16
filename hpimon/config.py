@@ -13,7 +13,9 @@ from pkg_resources import resource_filename
 
 
 # default config
+
 cfg_template = resource_filename(__name__, 'default.cfg')
+print cfg_template
 # user specific config
 homedir = op.expanduser('~')
 cfg_user = homedir + '/.hpimon.cfg'

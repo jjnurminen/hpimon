@@ -39,6 +39,7 @@ class HPImon(QtGui.QMainWindow):
         uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
         self.timer = QtCore.QTimer()
+        """
         try:
             cfg.read()
         except ValueError:
@@ -48,10 +49,10 @@ class HPImon(QtGui.QMainWindow):
                                 cfg.configfile)
             cfg.write()
             sys.exit()
-
+        """
         """ Parse some options """
         linefreq_, cfreqs_ = elekta.read_collector_config(cfg.hpi.
-                                                          COLLECTOR_CONFIG)
+                                                          collector_config)
         self.linefreq = cfg.hpi.LINE_FREQ or linefreq_
         self.cfreqs = cfg.hpi.HPI_FREQS or cfreqs_
         if not self.cfreqs:
