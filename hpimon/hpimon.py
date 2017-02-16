@@ -19,7 +19,7 @@ import scipy.linalg
 import os.path as op
 import traceback
 import socket
-from config import Config
+from config import cfg
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 import logging
@@ -40,7 +40,6 @@ class HPImon(QtGui.QMainWindow):
         uifile = resource_filename(__name__, 'hpimon.ui')
         uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
-        self.cfg = Config()
         self.timer = QtCore.QTimer()
         try:
             self.cfg.read()
@@ -261,12 +260,15 @@ class HPImon(QtGui.QMainWindow):
         buf = self.fetch_buffer()
         if buf is not None:
             # update saturation widget
-            vars = np.var(buf, axis=0)
-            gradvar = vars[self.pick_grad] <= self.cfg.GRAD_MIN_VAR
-            magvar = vars[self.pick_mag] <= self.cfg.MAG_MIN_VAR
-            # logger.debug(vars[self.pick_grad])
-            # logger.debug(vars[self.pick_mag])
-            nsat = np.count_nonzero(gradvar) + np.count_nonzero(magvar)
+            vars = np.std(buf, axis=0)
+            grad_std = vars[self.pick_grad] <= self.cfg.GRAD_MIN_STD
+            mag_std = vars[self.pick_mag] <= self.cfg.MAG_MIN_STD
+            #logger.debug('grads')            
+            #logger.debug(np.sort(vars[self.pick_grad]))
+            #logger.debug('mags')            
+            #logger.debug(np.sort(vars[self.pick_mag]))
+            nsat = np.count_nonzero(grad_std) + np.count_nonzero(mag_std)
+            logger.debug('%d saturated channels' % nsat)
             if nsat < self.cfg.SAT_OK:
                 sty = self.progbar_styles['good']
             elif nsat < self.cfg.SAT_BAD:
@@ -279,7 +281,6 @@ class HPImon(QtGui.QMainWindow):
             snr = self.compute_snr(buf)
             for wnum in range(self.ncoils):
                 this_snr = int(np.round(snr[wnum]))
-                logger.debug('coil %d: snr %d', wnum, this_snr)
                 self.progbars_SNR[wnum].setValue(this_snr)
                 if this_snr > self.cfg.SNR_OK:
                     sty = self.progbar_styles['good']
