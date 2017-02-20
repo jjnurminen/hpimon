@@ -168,7 +168,7 @@ class HPImon(QtGui.QMainWindow):
     def msg_running(self):
         return ('Running [%s], poll every %d ms, window %d ms' %
                 (cfg.server.host, cfg.server.buffer_poll_interval,
-                 cfg.server.win_len))
+                 cfg.hpi.win_len))
 
     def msg_stopped(self):
         return 'Stopped'
@@ -209,7 +209,7 @@ class HPImon(QtGui.QMainWindow):
             self.last_sample = buflast
 
     def fetch_buffer(self):
-        start = self.last_sample - cfg.server.win_len + 1
+        start = self.last_sample - cfg.hpi.win_len + 1
         stop = self.last_sample
         logger.debug('fetching buffer from %d to %d' % (start, stop))
         try:
