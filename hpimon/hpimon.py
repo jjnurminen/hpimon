@@ -19,11 +19,12 @@ import scipy.linalg
 import os.path as op
 import traceback
 import socket
-from config import cfg
+from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 import logging
 
+logger = logging.getLogger(__name__)
 
 
 class HPImon(QtGui.QMainWindow):
@@ -39,22 +40,21 @@ class HPImon(QtGui.QMainWindow):
         uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
         self.timer = QtCore.QTimer()
-        """
         try:
-            cfg.read()
-        except ValueError:
+            cfg._read_user()
+        except (ValueError, SyntaxError, IOError):
             self.message_dialog('Cannot parse config file, creating %s '
                                 'with default values. Please edit the file '
                                 'according to your setup and restart.' %
-                                cfg.configfile)
-            cfg.write()
+                                cfg_user)
+            cfg.__init__()  # reset to default values
+            cfg._write_user()
             sys.exit()
-        """
         """ Parse some options """
         linefreq_, cfreqs_ = elekta.read_collector_config(cfg.hpi.
                                                           collector_config)
-        self.linefreq = cfg.hpi.LINE_FREQ or linefreq_
-        self.cfreqs = cfg.hpi.HPI_FREQS or cfreqs_
+        self.linefreq = cfg.hpi.line_freq or linefreq_
+        self.cfreqs = cfg.hpi.hpi_freqs or cfreqs_
         if not self.cfreqs:
             self.message_dialog('Cannot detect HPI frequencies and none are '
                                 'specified in the config file. Aborting.')
@@ -66,20 +66,20 @@ class HPImon(QtGui.QMainWindow):
         self.ncoils = len(self.cfreqs)
 
         self.serverp = None
-        if cfg.server.SERVER_AUTOSTART:
-            if not op.isfile(cfg.server.SERVER_PATH):
+        if cfg.server.server_autostart:
+            if not op.isfile(cfg.server.server_path):
                 self.message_dialog('Cannot find server binary at %s, please '
-                                    'check config.' % cfg.server.SERVER_PATH)
+                                    'check config.' % cfg.server.server_path)
                 sys.exit()
-            server_bin = op.split(cfg.server.SERVER_PATH)[1]
+            server_bin = op.split(cfg.server.server_path)[1]
             if rt_server_pid(server_bin):
                 self.message_dialog('Realtime server already running. '
                                     'Please kill it first.')
                 sys.exit()
-            if cfg.server.HOST == 'localhost':
+            if cfg.server.host == 'localhost':
                 logger.debug('starting server')
-                self.serverp = start_rt_server(cfg.server.SERVER_PATH,
-                                               cfg.server.SERVER_OPTS.split())
+                self.serverp = start_rt_server(cfg.server.server_path,
+                                               cfg.server.server_opts.split())
                 if not rt_server_pid(server_bin):
                     self.message_dialog('Could not start realtime server.')
                     sys.exit()
@@ -88,7 +88,7 @@ class HPImon(QtGui.QMainWindow):
         self.init_widgets()
         self.ftclient = FieldTrip.Client()
         try:
-            self.ftclient.connect(cfg.server.HOST, port=cfg.server.PORT)
+            self.ftclient.connect(cfg.server.host, port=cfg.server.port)
         except socket.error:
             self.message_dialog('Cannot connect to the realtime server. '
                                 'Possibly a networking problem or you have '
@@ -99,7 +99,7 @@ class HPImon(QtGui.QMainWindow):
         """ Poll using timer until header info becomes available """
         self.statusbar.showMessage('Waiting for measurement to start...')
         self.timer.timeout.connect(self.start_if_header)
-        self.timer.start(cfg.server.BUFFER_POLL_INTERVAL)
+        self.timer.start(cfg.server.buffer_poll_interval)
 
     def start_if_header(self):
         """ Start if header info has become available. """
@@ -121,7 +121,7 @@ class HPImon(QtGui.QMainWindow):
         # from now on, use the timer for data buffer polling
         self.timer.timeout.disconnect(self.start_if_header)
         self.timer.timeout.connect(self.poll_buffer)
-        self.timer.start(cfg.server.BUFFER_POLL_INTERVAL)
+        self.timer.start(cfg.server.buffer_poll_interval)
         self.statusbar.showMessage(self.msg_running())
 
     def init_widgets(self):
@@ -139,7 +139,7 @@ class HPImon(QtGui.QMainWindow):
             progbar.setValue(0)
             progbar.setFormat(u'%v dB')
             progbar.setTextVisible(True)
-            sty = '.QProgressBar {%s }' % cfg.display.BAR_STYLE
+            sty = '.QProgressBar {%s }' % cfg.display.bar_style
             progbar.setStyleSheet(sty)
             self.gridLayout_SNR.addWidget(progbar, wnum, 1)
             self.progbars_SNR.append(progbar)
@@ -147,9 +147,9 @@ class HPImon(QtGui.QMainWindow):
         self.progbar_styles = dict()
         for val in ['good', 'ok', 'bad']:
             sty = ('QProgressBar {%s} QProgressBar::chunk { background-color: '
-                   '%s; %s }' % (cfg.display.BAR_STYLE,
-                                 cfg.display.BAR_COLORS[val],
-                                 cfg.display.BAR_CHUNK_STYLE))
+                   '%s; %s }' % (cfg.display.bar_style,
+                                 cfg.display.bar_colors[val],
+                                 cfg.display.bar_chunk_style))
             self.progbar_styles[val] = sty
         # buttons
         self.btnQuit.clicked.connect(self.close)
@@ -167,8 +167,8 @@ class HPImon(QtGui.QMainWindow):
 
     def msg_running(self):
         return ('Running [%s], poll every %d ms, window %d ms' %
-                (cfg.server.HOST, cfg.server.BUFFER_POLL_INTERVAL,
-                 cfg.server.WIN_LEN))
+                (cfg.server.host, cfg.server.buffer_poll_interval,
+                 cfg.server.win_len))
 
     def msg_stopped(self):
         return 'Stopped'
@@ -209,7 +209,7 @@ class HPImon(QtGui.QMainWindow):
             self.last_sample = buflast
 
     def fetch_buffer(self):
-        start = self.last_sample - cfg.server.WIN_LEN + 1
+        start = self.last_sample - cfg.server.win_len + 1
         stop = self.last_sample
         logger.debug('fetching buffer from %d to %d' % (start, stop))
         try:
@@ -226,9 +226,9 @@ class HPImon(QtGui.QMainWindow):
     def init_glm(self):
         """ Build general linear model for amplitude estimation """
         # get some info from fiff
-        self.linefreqs = (np.arange(cfg.hpi.NHARM+1)+1) * self.linefreq
+        self.linefreqs = (np.arange(cfg.hpi.nharm+1)+1) * self.linefreq
         # time + dc and slope terms
-        t = np.arange(cfg.hpi.WIN_LEN) / float(self.sfreq)
+        t = np.arange(cfg.hpi.win_len) / float(self.sfreq)
         self.model = np.empty((len(t),
                                2+2*(len(self.linefreqs)+len(self.cfreqs))))
         self.model[:, 0] = t
@@ -261,17 +261,13 @@ class HPImon(QtGui.QMainWindow):
         if buf is not None:
             # update saturation widget
             vars = np.std(buf, axis=0)
-            grad_std = vars[self.pick_grad] <= cfg.limits.GRAD_MIN_STD
-            mag_std = vars[self.pick_mag] <= cfg.limits.MAG_MIN_STD
-            #logger.debug('grads')            
-            #logger.debug(np.sort(vars[self.pick_grad]))
-            #logger.debug('mags')            
-            #logger.debug(np.sort(vars[self.pick_mag]))
+            grad_std = vars[self.pick_grad] <= cfg.limits.grad_min_std
+            mag_std = vars[self.pick_mag] <= cfg.limits.mag_min_std
             nsat = np.count_nonzero(grad_std) + np.count_nonzero(mag_std)
             logger.debug('%d saturated channels' % nsat)
-            if nsat < cfg.limits.N_SAT_OK:
+            if nsat < cfg.limits.n_sat_ok:
                 sty = self.progbar_styles['good']
-            elif nsat < cfg.limits.N_SAT_BAD:
+            elif nsat < cfg.limits.n_sat_bad:
                 sty = self.progbar_styles['ok']
             else:
                 sty = self.progbar_styles['bad']
@@ -282,9 +278,9 @@ class HPImon(QtGui.QMainWindow):
             for wnum in range(self.ncoils):
                 this_snr = int(np.round(snr[wnum]))
                 self.progbars_SNR[wnum].setValue(this_snr)
-                if this_snr > cfg.limits.SNR_OK:
+                if this_snr > cfg.limits.snr_ok:
                     sty = self.progbar_styles['good']
-                elif this_snr > cfg.limits.SNR_BAD:
+                elif this_snr > cfg.limits.snr_bad:
                     sty = self.progbar_styles['ok']
                 else:
                     sty = self.progbar_styles['bad']
@@ -312,8 +308,14 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
 
+    # set up root logger
     logger = logging.getLogger()
-    logging.basicConfig(level=logging.DEBUG)
+    handler = logging.StreamHandler()
+    nullhandler = logging.NullHandler()
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(name)s: %(levelname)s: %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(nullhandler)  # change to 'handler' to get debug output
 
     hpimon = HPImon()
 

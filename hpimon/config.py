@@ -13,9 +13,7 @@ from pkg_resources import resource_filename
 
 
 # default config
-
 cfg_template = resource_filename(__name__, 'default.cfg')
-print cfg_template
 # user specific config
 homedir = op.expanduser('~')
 cfg_user = homedir + '/.hpimon.cfg'
@@ -31,34 +29,54 @@ class ExtConfigParser(object):
     1) providing attribute access as extconfigparser.section.item
     2) attributes (as above) are stored as Python types, with autoconversion by
     the ast module
+    Currently read-only (i.e. no API for setting config values)
     """
 
-    def __init__(self, cfg_template, cfg_user):
+    def __init__(self):
         self._parser = ConfigParser.SafeConfigParser()
-        self._read(cfg_template)
-        try:
-            self._read(cfg_user)
-        except IOError:
-            print('no config file, trying to create %s' % cfg_user)
-            self._write(cfg_user)
+        self._parser.read(cfg_template)
+        self._defaultparser = self._parser
+        # don't read the user config here,
+        # to avoid triggering exceptions on import
 
-    def _read(self, file):
-        if not op.isfile(file):
-            raise IOError('Config file does not exist')
-        self._parser.read(file)
+    def _update_attrs(self):
+        """ Update attributes according to current parser object. Overwrites
+        existing attributes. Does not delete attributes which don't have a
+        new value. """
         for section in self._parser.sections():
-            if section[0] == '_':  # don't allow underscores (protect members)
-                raise ValueError('Illegal section name: %s' % section)
             if section not in self.__dict__:
                 self.__dict__[section] = Section()
             cfgtxt = self._parser._sections[section]
             cfg = self._untextify(cfgtxt)
             self.__dict__[section].__dict__.update(cfg)
 
+    def _read_user(self):
+        if not op.isfile(cfg_user):
+            raise IOError('User config file does not exist')
+        newparser = ConfigParser.SafeConfigParser()
+        newparser.read(cfg_user)
+        # validate sections and keys (not yet values)
+        extras = (set(newparser.sections()) -
+                  set(self._defaultparser.sections()))
+        if extras:
+            raise ValueError('Invalid sections in config file: %s'
+                             % list(extras))
+        for section in newparser.sections():
+            extrak = (set(newparser._sections[section].keys()) -
+                      set(self._defaultparser._sections[section].keys()))
+            if extrak:
+                raise ValueError('Invalid keys in config file: %s' %
+                                 list(extrak))
+        self._parser = newparser
+        self._update_attrs()
+
     def _write(self, file):
         cfg = open(file, 'wt')
         self._parser.write(cfg)
         cfg.close()
+
+    def _write_user(self):
+        self._write(cfg_user)
 
     @staticmethod
     def _untextify(di):
@@ -68,4 +86,4 @@ class ExtConfigParser(object):
 
 """ Provide a singleton config instance, so it doesn't have to be instantiated
 separately by every caller module """
-cfg = ExtConfigParser(cfg_template, cfg_user)
+cfg = ExtConfigParser()

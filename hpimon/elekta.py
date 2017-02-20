@@ -10,7 +10,9 @@ import os.path as op
 
 
 def read_collector_config(cfg_file):
-    """ Read parameters from collector setup file. """
+    """ Read hpi frequency parameters and line frequency from collector
+    setup file. Returns tuple of (linefreq, hpifreqs)
+    where hpifreqs is a list of float """
     hpifreqs = []
     linefreq = None
     if op.isfile(cfg_file):
