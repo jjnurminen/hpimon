@@ -22,6 +22,7 @@ import socket
 from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
+import argparse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -64,8 +65,8 @@ class HPImon(QtGui.QMainWindow):
                                 'specified in the config file. Aborting.')
             sys.exit()
         self.ncoils = len(self.cfreqs)
-
         self.serverp = None
+        
         if cfg.server.server_autostart:
             if not op.isfile(cfg.server.server_path):
                 self.message_dialog('Cannot find server binary at %s, please '
@@ -115,6 +116,7 @@ class HPImon(QtGui.QMainWindow):
                                                 self.pick_grad]))
         self.nchan = len(self.pick_meg)
         self.sfreq = self.get_header_info()['sfreq']
+        logger.debug('sampling frequency %.2f Hz' % self.sfreq)
         self.init_glm()
         self.last_sample = self.buffer_last_sample()
         self.new_data.connect(self.update_display)
@@ -200,18 +202,18 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        logger.debug('polling, buffer last sample: %d, my last sample: %d' %
-                     (buflast, self.last_sample))
+        #logger.debug('polling, buffer last sample: %d, my last sample: %d' %
+        #             (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
-            logger.debug('new data in buffer')
             self.new_data.emit()
             self.last_sample = buflast
 
     def fetch_buffer(self):
         start = self.last_sample - cfg.hpi.win_len + 1
         stop = self.last_sample
-        logger.debug('fetching buffer from %d to %d' % (start, stop))
+        logger.debug('fetching buffer %d - %d (start at t = %.2f s)'
+                     % (start, stop, start / self.sfreq))
         try:
             data = self.ftclient.getData([start, stop])
         except struct.error:  # something wrong with the buffer
@@ -256,11 +258,31 @@ class HPImon(QtGui.QMainWindow):
         #    resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
+    @staticmethod
+    def running_sum(M, win, axis=None):
+        """ Running (windowed) sum of sequence M using cumulative sum, along given
+        axis. Inspired by
+        http://arogozhnikov.github.io/2015/09/30/NumpyTipsAndTricks2.html """
+        if axis is None:
+            M = M.flatten()
+        s = np.cumsum(M, axis=axis)
+        s = np.insert(s, 0, [0], axis=axis)
+        len = s.shape[0] if axis is None else s.shape[axis]
+        return (s.take(np.arange(win, len), axis=axis) -
+                s.take(np.arange(0, len-win), axis=axis))
+    
+    @staticmethod
+    def running_var(M, win, axis=None):
+        """ Running variance using window length of win """
+        return HPImon.running_sum(M**2, win, axis)/win - (HPImon.running_sum(M, win, axis)/win)**2
+
     def update_display(self):
         buf = self.fetch_buffer()
         if buf is not None:
             # update saturation widget
-            vars = np.std(buf, axis=0)
+            #vars = np.std(buf, axis=0)
+            vars = np.min(np.sqrt(HPImon.running_var(buf, win=50, axis=0)), axis=0)
+            print vars.shape
             grad_std = vars[self.pick_grad] <= cfg.limits.grad_min_std
             mag_std = vars[self.pick_mag] <= cfg.limits.mag_min_std
             nsat = np.count_nonzero(grad_std) + np.count_nonzero(mag_std)
@@ -311,11 +333,14 @@ def main():
     # set up root logger
     logger = logging.getLogger()
     handler = logging.StreamHandler()
+    filehandler = logging.FileHandler('hpimon.log')
     nullhandler = logging.NullHandler()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(name)s: %(levelname)s: %(message)s')
     handler.setFormatter(formatter)
-    logger.addHandler(nullhandler)  # change to 'handler' to get debug output
+    filehandler.setFormatter(formatter)    
+    logger.addHandler(filehandler)  # change to 'handler' to get debug output
+    
 
     hpimon = HPImon()
 
