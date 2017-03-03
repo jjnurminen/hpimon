@@ -22,6 +22,7 @@ import socket
 from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
+from utils import running_var
 import argparse
 import logging
 
@@ -35,6 +36,8 @@ class HPImon(QtGui.QMainWindow):
 
     def __init__(self):
         super(self.__class__, self).__init__()
+        # hardcoded options
+        self.VAR_WINDOW = 50  # window for variance computation (ms)
         self.apptitle = 'hpimon'
         # load user interface made with designer
         uifile = resource_filename(__name__, 'hpimon.ui')
@@ -116,6 +119,9 @@ class HPImon(QtGui.QMainWindow):
                                                 self.pick_grad]))
         self.nchan = len(self.pick_meg)
         self.sfreq = self.get_header_info()['sfreq']
+
+        self.var_window = int(self.sfreq * self.VAR_WINDOW/1000.)
+        logger.debug('variance window %d samples' % self.var_window)
         logger.debug('sampling frequency %.2f Hz' % self.sfreq)
         self.init_glm()
         self.last_sample = self.buffer_last_sample()
@@ -258,34 +264,17 @@ class HPImon(QtGui.QMainWindow):
         #    resid_vars[self.pick_mag].mean()
         return 10 * np.log10(snr_avg_grad)
 
-    @staticmethod
-    def running_sum(M, win, axis=None):
-        """ Running (windowed) sum of sequence M using cumulative sum, along given
-        axis. Inspired by
-        http://arogozhnikov.github.io/2015/09/30/NumpyTipsAndTricks2.html """
-        if axis is None:
-            M = M.flatten()
-        s = np.cumsum(M, axis=axis)
-        s = np.insert(s, 0, [0], axis=axis)
-        len = s.shape[0] if axis is None else s.shape[axis]
-        return (s.take(np.arange(win, len), axis=axis) -
-                s.take(np.arange(0, len-win), axis=axis))
-    
-    @staticmethod
-    def running_var(M, win, axis=None):
-        """ Running variance using window length of win """
-        return HPImon.running_sum(M**2, win, axis)/win - (HPImon.running_sum(M, win, axis)/win)**2
-
     def update_display(self):
         buf = self.fetch_buffer()
         if buf is not None:
             # update saturation widget
-            #vars = np.std(buf, axis=0)
-            vars = np.min(np.sqrt(HPImon.running_var(buf, win=50, axis=0)), axis=0)
-            print vars.shape
-            grad_std = vars[self.pick_grad] <= cfg.limits.grad_min_std
-            mag_std = vars[self.pick_mag] <= cfg.limits.mag_min_std
-            nsat = np.count_nonzero(grad_std) + np.count_nonzero(mag_std)
+            # for each channel, find window with minimum std deviation
+            va = running_var(buf, win=self.var_window, axis=0)
+            va = np.clip(va, 0, np.inf)
+            min_std = np.min(np.sqrt(va), axis=0)
+            grad_sat = min_std[self.pick_grad] <= cfg.limits.grad_min_std
+            mag_sat = min_std[self.pick_mag] <= cfg.limits.mag_min_std
+            nsat = np.count_nonzero(grad_sat) + np.count_nonzero(mag_sat)
             logger.debug('%d saturated channels' % nsat)
             if nsat < cfg.limits.n_sat_ok:
                 sty = self.progbar_styles['good']
@@ -339,7 +328,7 @@ def main():
     formatter = logging.Formatter('%(name)s: %(levelname)s: %(message)s')
     handler.setFormatter(formatter)
     filehandler.setFormatter(formatter)    
-    logger.addHandler(filehandler)  # change to 'handler' to get debug output
+    logger.addHandler(handler)  # change to 'handler' to get debug output
     
 
     hpimon = HPImon()
