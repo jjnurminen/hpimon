@@ -69,7 +69,7 @@ class HPImon(QtGui.QMainWindow):
             sys.exit()
         self.ncoils = len(self.cfreqs)
         self.serverp = None
-        
+
         if cfg.server.server_autostart:
             if not op.isfile(cfg.server.server_path):
                 self.message_dialog('Cannot find server binary at %s, please '
