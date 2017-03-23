@@ -22,7 +22,7 @@ import socket
 from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
-from utils import running_var
+from utils import rolling_var_strided
 import argparse
 import logging
 
@@ -114,12 +114,15 @@ class HPImon(QtGui.QMainWindow):
     def start(self):
         """ We now have header info and can start running """
         self.timer.stop()
-        self.pick_mag, self.pick_grad = self.get_ch_indices()
+        hdrinfo = self.get_header_info()
+        self.sfreq = hdrinfo['sfreq']
+        self.ch_labels = hdrinfo['labels']
+        self.pick_mag, self.pick_grad = self.get_ch_indices(self.ch_labels)
         self.pick_meg = np.sort(np.concatenate([self.pick_mag,
                                                 self.pick_grad]))
         self.nchan = len(self.pick_meg)
-        self.sfreq = self.get_header_info()['sfreq']
-
+        self.grad_labels = np.array(self.ch_labels)[self.pick_grad]
+        self.mag_labels = np.array(self.ch_labels)[self.pick_mag]
         self.var_window = int(self.sfreq * self.VAR_WINDOW/1000.)
         logger.debug('variance window %d samples' % self.var_window)
         logger.debug('sampling frequency %.2f Hz' % self.sfreq)
@@ -181,11 +184,11 @@ class HPImon(QtGui.QMainWindow):
     def msg_stopped(self):
         return 'Stopped'
 
-    def get_ch_indices(self):
+    def get_ch_indices(self, labels):
         """ Return indices of magnetometers and gradiometers in the
         FieldTrip data matrix """
         grads, mags = [], []
-        for ind, ch in enumerate(self.ftclient.getHeader().labels):
+        for ind, ch in enumerate(labels):
             if ch[:3] == 'MEG':
                 if ch[-1] == '1':
                     mags.append(ind)
@@ -199,7 +202,8 @@ class HPImon(QtGui.QMainWindow):
 
     def get_header_info(self):
         """ Get misc info from FieldTrip header """
-        return {'sfreq': self.ftclient.getHeader().fSample}
+        hdr = self.ftclient.getHeader()
+        return {'sfreq': hdr.fSample, 'labels': hdr.labels}
 
     def buffer_last_sample(self):
         """ Return number of last sample available from server. """
@@ -269,13 +273,14 @@ class HPImon(QtGui.QMainWindow):
         if buf is not None:
             # update saturation widget
             # for each channel, find window with minimum std deviation
-            va = running_var(buf, win=self.var_window, axis=0)
-            va = np.clip(va, 0, np.inf)
-            min_std = np.min(np.sqrt(va), axis=0)
+            std = rolling_var_strided(buf, np.std, self.var_window, axis=0)
+            min_std = np.min(std, axis=0)
             grad_sat = min_std[self.pick_grad] <= cfg.limits.grad_min_std
             mag_sat = min_std[self.pick_mag] <= cfg.limits.mag_min_std
             nsat = np.count_nonzero(grad_sat) + np.count_nonzero(mag_sat)
             logger.debug('%d saturated channels' % nsat)
+            logger.debug('gradiometers: %s' % self.grad_labels[grad_sat])
+            logger.debug('magnetometers: %s' % self.mag_labels[mag_sat])
             if nsat < cfg.limits.n_sat_ok:
                 sty = self.progbar_styles['good']
             elif nsat < cfg.limits.n_sat_bad:
