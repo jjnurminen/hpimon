@@ -1,6 +1,6 @@
 # hpimon
 
-This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet).
+This is a realtime monitor of HPI (head position indicator) signals for Elekta MEG systems (TRIUX/Neuromag). It is intended to be used with continuous HPI to detect possible problems during the measurement (e.g. a child withdrawing their head from the helmet). It also monitors the amount of MEG channels that are saturated and thus not contributing any data (due to e.g. large interference signals).
 
 NOTE: still seriously work in progress. If you use this in important measurements, you do so at your own risk.
 
@@ -31,7 +31,7 @@ If compilation succeeds, the neuromag2ft binary should now be available under `f
 
 ## Initial configuration
 
-Run `python hpimon.py` from a terminal. On the first run, the program will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `SERVER_PATH` so that points to the `neuromag2ft` binary.
+Run `python hpimon.py` from a terminal. On the first run, the program will create a new configuration file and abort. Edit the configuration file (`~/.hpimon.cfg`). Edit `server_path` so it points to your `neuromag2ft` binary.
 
 ## Running
 
@@ -50,6 +50,12 @@ If the SNR of all coils suddenly decreases a lot, this may due to several reason
 - continuous HPI accidentally turned off
 - subject biting through the HPI coil wires (just kidding)
 
+## Monitoring of saturated channels
+
+The software detects saturated channels by computing standard deviation for each channel using a 50 ms sliding window. If the standard deviation drops below the limits set in the configuration file for any window, the channel is marked as saturated. 
+
+The acceptable limits for the number of saturated channels are set in the configuration file. When the `n_sat_bad` limit is exceeded, the indicator bar is displayed in red color.
+
 ## Shutting down the realtime server
 
 It is good to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Normally hpimon handles this by itself. If it cannot be done (e.g. power failure, or process stopped with SIGKILL), `neuromag2ft` will not have a chance to restore the buffer settings of the data acquisition to their original values, which may possibly cause some trouble later. If in doubt, run `neuromag2ft` manually with the `--fixchunksize` option. Also, restarting the acquisition programs from the maintenance menu will always restore the settings.
@@ -59,28 +65,32 @@ It is good to cleanly shut down `neuromag2ft` (by Ctrl-C or SIGTERM signal). Nor
 The line frequency and HPI frequencies are normally read from the data acquisition config files. You can override them in the hpimon config file, like so:
 
 ```
-LINE_FREQ = 50
-HPI_FREQS = [293.0, 307.0, 314.0, 321.0, 328.0]
+line_freq = 50
+hpi_freqs = [293.0, 307.0, 314.0, 321.0, 328.0]
 ```
-`SERVER_OPTS` are the options passed to `neuromag2ft`. The `chunk_size` option is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second. Note that the chunk also affects the raw data display of the acquisition software: the display length must be a multiple of the chunk length. Value of sampling rate / 2 is reasonable, so you get updates twice per second.
+`server_opts` are the options passed to `neuromag2ft`. The `chunk_size` option is the size of the data chunk (in samples) that the server requests from the acquisition system. It determines the update frequency of the monitor, e.g. if the chunk is 500 milliseconds, the display will update twice per second. Note that the chunk also affects the raw data display of the acquisition software: the display length must be a multiple of the chunk length. Value of sampling rate / 2 is reasonable, so you get updates twice per second.
 
-If you don't want hpimon to start and stop the server, specify `SERVER_AUTOSTART = 0`.
+If you don't want hpimon to start and stop the server, specify `server_autostart = 0`.
 
-`BUFFER_POLL_INTERVAL` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `chunk_size` option (so that polling happens more often than new data actually arrives).
+`buffer_poll_interval` refers to the interval for polling the realtime server buffer. Normally should be set smaller than the `chunk_size` option (so that polling happens more often than new data actually arrives).
 
-`WIN_LEN` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
+`win_len` is length of the data used for the computations. It can be longer than `chunk_size`, in which case overlapping chunks are used for the computations. The display is updated whenever new data becomes available (see `chunk_size` above).
 
 ## Testing without acquisition 
 
-To test the monitor, you can stream data from a file. This requires `neuromag2ft` version >= 3.0.2. In the config file, specify `SERVER_OPTS = --file test_raw.fif`. Specify also `HPI_FREQS` as they are not available via the FieldTrip header. Note that the `--chunksize` option of `neuromag2ft` has no effect when streaming from a file.
+To test the monitor, you can stream data from a file. This requires `neuromag2ft` version >= 3.0.2. In the config file, specify `server_opts = '--file test_raw.fif'`. Specify also `hpi_freqs` as they are not available via the FieldTrip header. Note that the `--chunksize` option of `neuromag2ft` has no effect when streaming from a file.
 
 ## Running on a separate workstation
 
 You need to:
 
-- start the neuromag2ft server yourself on sinuhe (set `SERVER_AUTOSTART = 0` in config, so that hpimon will not try to manage it)
-- set `HOSTNAME = sinuhe` in config (or whatever the hostname of the acquisition computer is in your network)
+- start the neuromag2ft server yourself on sinuhe (set `server_autostart = 0` in config, so that hpimon will not try to manage it)
+- set `hostname = 'sinuhe'` in config (or whatever the hostname of the acquisition computer is in your network)
 - open the firewall on sinuhe, or at least tcp port 1972. You can temporarily disable the firewall by issuing the command `/etc/init.d/iptables stop` (be aware of the security implications)
+
+## Command line options
+
+You can enable debug output by starting the software as `hpimon --debug`.
 
 ## (Known) issues
 
@@ -89,10 +99,6 @@ The CPU usage seems extremely high, at least according to top. Apparently this i
 The SNR limits are somewhat arbitrary. Effects of different SNR on e.g. MaxFilter should be investigated more carefully.
 
 The frequencies should be read directly from collector via its TCP interface, instead of config files. Not of practical consequence, unless you have a habit of changing HPI frequencies directly via the collector interface.
-
-It would be cool to build the GUI dynamically, so the number of SNR bars would always match the number of HPI frequencies in use. Most sites use five frequencies though.
-
-SNR widgets could be more aesthetically pleasing.
 
 
 
