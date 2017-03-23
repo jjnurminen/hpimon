@@ -327,14 +327,14 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
 
-    # set up root logger
+    # debug to stdout if cmd line switch is set
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     streamhandler = logging.StreamHandler()
     formatter = logging.Formatter('%(name)s: %(levelname)s: %(message)s')
     streamhandler.setFormatter(formatter)
     handler = streamhandler if args.debug else logging.NullHandler()
-    logger.addHandler(handler)  # change to 'handler' to get debug output
+    logger.addHandler(handler)
 
     hpimon = HPImon()
 
