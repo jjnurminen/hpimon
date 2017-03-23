@@ -23,8 +23,8 @@ from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
 from utils import rolling_var_strided
-import argparse
 import logging
+import argparse
 
 logger = logging.getLogger(__name__)
 
@@ -212,8 +212,6 @@ class HPImon(QtGui.QMainWindow):
     def poll_buffer(self):
         """ Emit a signal if new data is available in the buffer. """
         buflast = self.buffer_last_sample()
-        #logger.debug('polling, buffer last sample: %d, my last sample: %d' %
-        #             (buflast, self.last_sample))
         # buffer last sample can also decrease (reset) if streaming from file
         if buflast != self.last_sample:
             self.new_data.emit()
@@ -322,19 +320,21 @@ class HPImon(QtGui.QMainWindow):
 
 def main():
 
+    parser = argparse.ArgumentParser(description='Continuous HPI monitor')
+    parser.add_argument('--debug', help='Enable debug output',
+                        action='store_true')
+    args = parser.parse_args()
+
     app = QtGui.QApplication(sys.argv)
 
     # set up root logger
     logger = logging.getLogger()
-    handler = logging.StreamHandler()
-    filehandler = logging.FileHandler('hpimon.log')
-    nullhandler = logging.NullHandler()
     logger.setLevel(logging.DEBUG)
+    streamhandler = logging.StreamHandler()
     formatter = logging.Formatter('%(name)s: %(levelname)s: %(message)s')
-    handler.setFormatter(formatter)
-    filehandler.setFormatter(formatter)    
+    streamhandler.setFormatter(formatter)
+    handler = streamhandler if args.debug else logging.NullHandler()
     logger.addHandler(handler)  # change to 'handler' to get debug output
-    
 
     hpimon = HPImon()
 
