@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='hpimon',
-      version='0.12.2',
+      version='0.12.3',
       description='Continuous HPI monitor for Elekta MEG systems',
       author='Jussi Nurminen',
       author_email='jnu@iki.fi',
