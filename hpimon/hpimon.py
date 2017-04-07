@@ -22,7 +22,7 @@ import socket
 from config import cfg, cfg_user
 import elekta
 from rt_server import start_rt_server, stop_rt_server, rt_server_pid
-from utils import rolling_var_strided
+from utils import rolling_fun_strided
 import logging
 import argparse
 
@@ -271,7 +271,7 @@ class HPImon(QtGui.QMainWindow):
         if buf is not None:
             # update saturation widget
             # for each channel, find window with minimum std deviation
-            std = rolling_var_strided(buf, np.std, self.var_window, axis=0)
+            std = rolling_fun_strided(buf, np.std, self.var_window, axis=0)
             min_std = np.min(std, axis=0)
             grad_sat = min_std[self.pick_grad] <= cfg.limits.grad_min_std
             mag_sat = min_std[self.pick_mag] <= cfg.limits.mag_min_std

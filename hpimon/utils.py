@@ -10,7 +10,7 @@ import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
 
-def rolling_var_strided(m, fun, win, axis=None):
+def rolling_fun_strided(m, fun, win, axis=None):
     """ Window array along axis with window length win. Apply fun to the
     windowed data and return result. """
     if axis is None:
@@ -26,25 +26,3 @@ def rolling_var_strided(m, fun, win, axis=None):
     # ms = as_strided(m, sh_, st_)
     return fun(as_strided(m, sh_, st_), axis=axis+1)
 
-
-def running_sum(M, win, axis=None):
-    """ Running (windowed) sum of sequence M using cumulative sum, along
-    given axis. Extended from
-    http://arogozhnikov.github.io/2015/09/30/NumpyTipsAndTricks2.html """
-    if axis is None:
-        M = M.flatten()
-    s = np.cumsum(M, axis=axis)
-    s = np.insert(s, 0, [0], axis=axis)
-    len = s.shape[0] if axis is None else s.shape[axis]
-    return (s.take(np.arange(win, len), axis=axis) -
-            s.take(np.arange(0, len-win), axis=axis))
-
-
-def running_var(M, win, axis=None):
-    """ Running variance using running_sum.
-    This is really fast but accuracy may be bad """
-    w = float(win)
-    M = M.astype(np.float64)  # ensure 64-bit for more accuracy
-    m = running_sum(M, win, axis)/w
-    m2 = running_sum(M**2, win, axis)/w
-    return m2-m**2
