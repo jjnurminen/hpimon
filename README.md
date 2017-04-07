@@ -48,7 +48,6 @@ If the SNR of all coils suddenly decreases a lot, this may due to several reason
 - subject moving further away from the helmet
 - a large increase in environmental interference
 - continuous HPI accidentally turned off
-- subject biting through the HPI coil wires (just kidding)
 
 ## Monitoring of saturated channels
 
