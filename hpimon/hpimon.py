@@ -8,8 +8,8 @@ Realtime hpi monitor for Vectorview/TRIUX MEG systems.
 
 
 import sys
-from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import pyqtSignal
+from PyQt5 import QtCore, uic, QtWidgets
+from PyQt5.QtCore import pyqtSignal
 from pkg_resources import resource_filename
 import time
 import struct
@@ -29,7 +29,7 @@ import argparse
 logger = logging.getLogger(__name__)
 
 
-class HPImon(QtGui.QMainWindow):
+class HPImon(QtWidgets.QMainWindow):
 
     # new signals must be defined here
     new_data = pyqtSignal()
@@ -138,13 +138,13 @@ class HPImon(QtGui.QMainWindow):
     def init_widgets(self):
         # create SNR labels and add to grid
         for wnum in range(self.ncoils):
-            label = QtGui.QLabel()
+            label = QtWidgets.QLabel()
             label.setText(str(self.cfreqs[wnum]) + ' Hz')
             self.gridLayout_SNR.addWidget(label, wnum, 0)
         # create SNR progress bars dynamically and add to grid
         self.progbars_SNR = list()
         for wnum in range(self.ncoils):
-            progbar = QtGui.QProgressBar()
+            progbar = QtWidgets.QProgressBar()
             progbar.setMinimum(-100)
             progbar.setMaximum(100)
             progbar.setValue(0)
@@ -302,10 +302,10 @@ class HPImon(QtGui.QMainWindow):
 
     def message_dialog(self, msg):
         """ Show message with an 'OK' button. """
-        dlg = QtGui.QMessageBox()
+        dlg = QtWidgets.QMessageBox()
         dlg.setWindowTitle(self.apptitle)
         dlg.setText(msg)
-        dlg.addButton(QtGui.QPushButton('Ok'), QtGui.QMessageBox.YesRole)
+        dlg.addButton(QtWidgets.QPushButton('Ok'), QtWidgets.QMessageBox.YesRole)
         dlg.exec_()
 
     def closeEvent(self, event):
@@ -325,7 +325,7 @@ def main():
                         action='store_true')
     args = parser.parse_args()
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     # debug to stdout if cmd line switch is set
     logger = logging.getLogger()
