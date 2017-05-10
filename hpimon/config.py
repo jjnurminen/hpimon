@@ -36,6 +36,7 @@ class ExtConfigParser(object):
         self._parser = ConfigParser.SafeConfigParser()
         self._parser.read(cfg_template)
         self._defaultparser = self._parser
+        self._update_attrs()
         # don't read the user config here,
         # to avoid triggering exceptions on import
 
