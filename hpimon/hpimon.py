@@ -160,6 +160,16 @@ class HPImon(QtWidgets.QMainWindow):
             progbar.setStyleSheet(sty)
             self.gridLayout_SNR.addWidget(progbar, wnum, 1)
             self.progbars_SNR.append(progbar)
+        self.progbar_sat = QtWidgets.QProgressBar()
+        self.progbar_sat.setMinimum(0)
+        self.progbar_sat.setMaximum(cfg.limits.max_sat)
+        self.progbar_sat.setValue(0)
+        self.progbar_sat.setFormat(u'%v')
+        self.progbar_sat.setTextVisible(True)
+        sty = '.QProgressBar {%s }' % cfg.display.bar_style
+        self.progbar_sat.setStyleSheet(sty)
+        self.verticalLayout_sat.addWidget(self.progbar_sat)
+        
         # create stylesheets for progress bars, according to goodness of value
         self.progbar_styles = dict()
         for val in ['good', 'ok', 'bad']:
@@ -291,8 +301,10 @@ class HPImon(QtWidgets.QMainWindow):
                 sty = self.progbar_styles['ok']
             else:
                 sty = self.progbar_styles['bad']
-            self.progressBar_sat.setValue(nsat)
-            self.progressBar_sat.setStyleSheet(sty)
+            # cap the value at max_sat, as required by progress bar logic
+            nsat_ = min(nsat, cfg.limits.max_sat)
+            self.progbar_sat.setValue(nsat_)
+            self.progbar_sat.setStyleSheet(sty)
             # update snr widgets
             snr = self.compute_snr(buf)
             for wnum in range(self.ncoils):

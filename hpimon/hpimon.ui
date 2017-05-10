@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>437</width>
-    <height>328</height>
+    <width>463</width>
+    <height>323</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,26 +39,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QProgressBar" name="progressBar_sat">
-      <property name="minimum">
-       <number>0</number>
-      </property>
-      <property name="maximum">
-       <number>306</number>
-      </property>
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="textVisible">
-       <bool>true</bool>
-      </property>
-      <property name="invertedAppearance">
-       <bool>false</bool>
-      </property>
-      <property name="format">
-       <string>%v</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout_sat"/>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -85,8 +66,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>437</width>
-     <height>25</height>
+     <width>463</width>
+     <height>19</height>
     </rect>
    </property>
   </widget>
