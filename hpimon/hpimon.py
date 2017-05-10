@@ -46,14 +46,20 @@ class HPImon(QtWidgets.QMainWindow):
         self.timer = QtCore.QTimer()
         try:
             cfg._read_user()
-        except (ValueError, SyntaxError, IOError):
-            self.message_dialog('Cannot parse config file, creating %s '
+        except IOError:  # probably file not found
+            self.message_dialog('Cannot find config file, creating %s '
                                 'with default values. Please edit the file '
                                 'according to your setup and restart.' %
                                 cfg_user)
             cfg.__init__()  # reset to default values
             cfg._write_user()
             sys.exit()
+        except (ValueError, SyntaxError):  # broken config
+            self.message_dialog('Cannot parse config file %s, please check '
+                                'the contents of the file or delete it.' %
+                                cfg_user)
+            sys.exit()
+
         """ Parse some options """
         linefreq_, cfreqs_ = elekta.read_collector_config(cfg.hpi.
                                                           collector_config)
