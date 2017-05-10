@@ -39,9 +39,6 @@ class HPImon(QtWidgets.QMainWindow):
         # hardcoded options
         self.VAR_WINDOW = 50  # window for variance computation (ms)
         self.apptitle = 'hpimon'
-        # load user interface made with designer
-        uifile = resource_filename(__name__, 'hpimon.ui')
-        uic.loadUi(uifile, self)
         self.setWindowTitle(self.apptitle)
         self.timer = QtCore.QTimer()
         try:
@@ -142,11 +139,16 @@ class HPImon(QtWidgets.QMainWindow):
         self.statusbar.showMessage(self.msg_running())
 
     def init_widgets(self):
+        # create grid layout and buttons
+        self.maingrid = QtWidgets.QGridLayout()
+        label = QtWidgets.QLabel()
+        label.setText('HPI coils')
+        self.maingrid.addWidget(label, 0, 0, 1, 2)
         # create SNR labels and add to grid
         for wnum in range(self.ncoils):
             label = QtWidgets.QLabel()
             label.setText(str(self.cfreqs[wnum]) + ' Hz')
-            self.gridLayout_SNR.addWidget(label, wnum, 0)
+            self.maingrid.addWidget(label, wnum+1, 0)
         # create SNR progress bars dynamically and add to grid
         self.progbars_SNR = list()
         for wnum in range(self.ncoils):
@@ -158,8 +160,12 @@ class HPImon(QtWidgets.QMainWindow):
             progbar.setTextVisible(True)
             sty = '.QProgressBar {%s }' % cfg.display.bar_style
             progbar.setStyleSheet(sty)
-            self.gridLayout_SNR.addWidget(progbar, wnum, 1)
+            self.maingrid.addWidget(progbar, wnum+1, 1)
             self.progbars_SNR.append(progbar)
+        thisrow = self.ncoils + 1
+        label = QtWidgets.QLabel()
+        label.setText('Saturated MEG channels')
+        self.maingrid.addWidget(label, thisrow, 0, 1, 2)
         self.progbar_sat = QtWidgets.QProgressBar()
         self.progbar_sat.setMinimum(0)
         self.progbar_sat.setMaximum(cfg.limits.max_sat)
@@ -168,8 +174,11 @@ class HPImon(QtWidgets.QMainWindow):
         self.progbar_sat.setTextVisible(True)
         sty = '.QProgressBar {%s }' % cfg.display.bar_style
         self.progbar_sat.setStyleSheet(sty)
-        self.verticalLayout_sat.addWidget(self.progbar_sat)
-        
+        self.maingrid.addWidget(self.progbar_sat, thisrow+1, 0, 1, 2)
+        self.btnQuit = QtWidgets.QPushButton()        
+        self.btnStop = QtWidgets.QPushButton()
+        self.maingrid.addWidget(self.btnQuit, thisrow+2, 0)
+        self.maingrid.addWidget(self.btnStop, thisrow+2, 1)        
         # create stylesheets for progress bars, according to goodness of value
         self.progbar_styles = dict()
         for val in ['good', 'ok', 'bad']:
@@ -181,6 +190,13 @@ class HPImon(QtWidgets.QMainWindow):
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
+        # status bar
+        self.statusbar = QtWidgets.QStatusBar()
+        self.setStatusBar(self.statusbar)
+        wid = QtWidgets.QWidget(self)
+        self.setCentralWidget(wid)
+        wid.setLayout(self.maingrid)
+        
 
     def toggle_timer(self):
         if self.timer.isActive():
