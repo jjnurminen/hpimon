@@ -8,7 +8,7 @@ Realtime hpi monitor for Vectorview/TRIUX MEG systems.
 
 
 import sys
-from PyQt5 import QtCore, uic, QtWidgets
+from PyQt5 import QtCore, uic, QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal
 from pkg_resources import resource_filename
 import time
@@ -27,6 +27,39 @@ import logging
 import argparse
 
 logger = logging.getLogger(__name__)
+
+
+class statusLight(QtWidgets.QWidget):
+    """ Creates a status light of given radius """
+
+    def __init__(self, color, radius):
+        super(self.__class__, self).__init__()
+        self._color = color
+        self.diam = radius * 2
+        self.update()
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, color_):
+        """ If the color is different from the current one, set it and
+        cause paintEvent to occur """
+        if self._color != color_:
+            self._color = color_
+            self.update()
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter()
+        painter.begin(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.setBrush(QtGui.QColor(self.color))
+        painter.drawEllipse(0, 0, self.diam, self.diam)
+        painter.end()
+
+    def sizeHint(self):
+        return QtCore.QSize(self.diam, self.diam)
 
 
 class HPImon(QtWidgets.QMainWindow):
@@ -170,6 +203,7 @@ class HPImon(QtWidgets.QMainWindow):
         self.progbar_sat.setStyleSheet(sty)
         self.verticalLayout_sat.addWidget(self.progbar_sat)
         
+
         # create stylesheets for progress bars, according to goodness of value
         self.progbar_styles = dict()
         for val in ['good', 'ok', 'bad']:
@@ -181,6 +215,12 @@ class HPImon(QtWidgets.QMainWindow):
         # buttons
         self.btnQuit.clicked.connect(self.close)
         self.btnStop.clicked.connect(self.toggle_timer)
+        # status light
+        self.statlight = statusLight(cfg.display.bar_colors['good'], 50)
+        self.statusLightLayout.addSpacing(25)
+        self.statusLightLayout.addWidget(self.statlight, 0,
+                                         QtCore.Qt.AlignCenter)
+        self.statusLightLayout.addSpacing(25)       
 
     def toggle_timer(self):
         if self.timer.isActive():
@@ -297,10 +337,13 @@ class HPImon(QtWidgets.QMainWindow):
             logger.debug('magnetometers: %s' % self.mag_labels[mag_sat])
             if nsat < cfg.limits.n_sat_ok:
                 sty = self.progbar_styles['good']
+                self.statlight.color = cfg.display.bar_colors['good']
             elif nsat < cfg.limits.n_sat_bad:
                 sty = self.progbar_styles['ok']
+                self.statlight.color = cfg.display.bar_colors['ok']
             else:
                 sty = self.progbar_styles['bad']
+                self.statlight.color = cfg.display.bar_colors['bad']
             # cap the value at max_sat, as required by progress bar logic
             nsat_ = min(nsat, cfg.limits.max_sat)
             self.progbar_sat.setValue(nsat_)
@@ -323,7 +366,8 @@ class HPImon(QtWidgets.QMainWindow):
         dlg = QtWidgets.QMessageBox()
         dlg.setWindowTitle(self.apptitle)
         dlg.setText(msg)
-        dlg.addButton(QtWidgets.QPushButton('Ok'), QtWidgets.QMessageBox.YesRole)
+        dlg.addButton(QtWidgets.QPushButton('Ok'),
+                      QtWidgets.QMessageBox.YesRole)
         dlg.exec_()
 
     def closeEvent(self, event):

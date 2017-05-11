@@ -6,30 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>463</width>
-    <height>323</height>
+    <width>386</width>
+    <height>448</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>cHPI SNR</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="2" column="1">
      <layout class="QGridLayout" name="gridLayout_SNR"/>
     </item>
-    <item>
-     <widget class="QLabel" name="label_6">
+    <item row="3" column="1">
+     <widget class="QLabel" name="label_sat">
       <property name="text">
        <string>Saturated MEG channels</string>
       </property>
@@ -38,11 +28,8 @@
       </property>
      </widget>
     </item>
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout_sat"/>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+    <item row="6" column="1">
+     <layout class="QHBoxLayout" name="buttonLayout">
       <item>
        <widget class="QPushButton" name="btnStop">
         <property name="text">
@@ -59,6 +46,86 @@
       </item>
      </layout>
     </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label_chpi">
+      <property name="text">
+       <string>cHPI SNR</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_sat"/>
+    </item>
+    <item row="5" column="1">
+     <layout class="QVBoxLayout" name="statusLightLayout"/>
+    </item>
+    <item row="0" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="2">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="0">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="7" column="1">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -66,7 +133,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>463</width>
+     <width>386</width>
      <height>19</height>
     </rect>
    </property>
