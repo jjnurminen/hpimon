@@ -6,7 +6,7 @@ Created on Wed Feb 15 13:14:16 2017
 """
 
 
-import ConfigParser
+from configparser import ConfigParser
 import ast
 import os.path as op
 from pkg_resources import resource_filename
@@ -33,7 +33,7 @@ class ExtConfigParser(object):
     """
 
     def __init__(self):
-        self._parser = ConfigParser.SafeConfigParser()
+        self._parser = ConfigParser()
         self._parser.read(cfg_template)
         self._defaultparser = self._parser
         self._update_attrs()
@@ -54,7 +54,7 @@ class ExtConfigParser(object):
     def _read_user(self):
         if not op.isfile(cfg_user):
             raise IOError('User config file does not exist')
-        newparser = ConfigParser.SafeConfigParser()
+        newparser = ConfigParser()
         newparser.read(cfg_user)
         # validate sections and keys (not yet values)
         extras = (set(newparser.sections()) -
